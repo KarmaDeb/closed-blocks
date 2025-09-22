@@ -1,0 +1,36 @@
+############################################################
+#                                                          #
+#                  ELEVATOR CONFIGURATION                  #
+#                                                          #
+# Plugin version: ${project.version}                       #
+# Author: tagless                                          #
+# Compiled at: ${buildNumber}                              #
+#                                                          #
+# Java compiler: ${java.version}                           #
+# Compiler source: ${maven.compiler.source}                #
+# Compiler target: ${maven.compiler.target}                #
+############################################################
+
+elevator:
+   max_height: 50
+   title:
+      enabled: true
+      fadeIn: 0
+      keep: 3
+      fadeOut: 0
+      up:
+         title: '&a%elevator_floor%'
+         subtitle: '&7%elevator_floor_name%'
+      down:
+         title: '&c%elevator_floor%'
+         subtitle: '&7%elevator_floor_name%'
+   sound:
+      enabled: true
+      up:
+         sound: ''
+         volume: 0
+         pitch: 0
+      down:
+         sound: ''
+         volume: 0
+         pitch: 0
