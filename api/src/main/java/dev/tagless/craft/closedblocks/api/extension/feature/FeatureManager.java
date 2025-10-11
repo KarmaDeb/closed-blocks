@@ -43,6 +43,58 @@ public interface FeatureManager {
     void enable(final @NotNull Class<? extends ClosedBlocksFeature> feature);
 
     /**
+     * Enables a feature, which at the same time, depends
+     * on a sub-set of features. An example of this are
+     * {@link dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior behaviors}, as they are a feature
+     * which, depends directly on a {@link dev.tagless.craft.closedblocks.api.block.EvolvedBlock block}, which at the same
+     * time, are a feature.
+     * <pre>
+     * {@code
+     *     @IntendedFor(MyBlock.class)
+     *     class MyBehavior extends BlockBehavior {
+     *
+     *     }
+     *
+     *     class MyBlock implements EvolvedBlock {
+     *
+     *     }
+     *
+     *     featureManager.enableFor(MyBehavior.class, MyBlock.class, AnotherBlock.class); //Enables "MyBehavior" on "MyBlock" only
+     * }
+     * </pre>
+     * Another example:
+     * <pre>
+     * {@code
+     *      @IntendedFor(MyBlock.class)
+     *      class BehaviorOne extends BlockBehavior {
+     *
+     *      }
+     *
+     *      @IntendedFor(MyBlock.class)
+     *      class BehaviorTwo extends BlockBehavior {
+     *
+     *      }
+     *
+     *      @IntendedFor(MyBlock.class)
+     *      class BehaviorThree extends BlockBehavior {
+     *
+     *      }
+     *
+     *      class MyBlock implements EvolvedBlock {
+     *
+     *      }
+     *
+     *      featureManager.enableFor(MyBlock.class, BehaviorOne.class, BehaviorTwo.class, BehaviorThree.class);
+     * }
+     * </pre>
+     */
+    default void enableFor(final @NotNull Class<? extends ClosedBlocksFeature> feature,
+                           final @NotNull Class<? extends ClosedBlocksFeature> feature1,
+                           final Class<?>... features) {
+
+    }
+
+    /**
      * Disables a feature
      * @param feature the feature class
      */
@@ -80,5 +132,5 @@ public interface FeatureManager {
      * @return the block feature
      */
     @NotNull
-    Optional<Class<? extends ClosedBlocksFeature>> getFeature(final NamespacedKey key);
+    Optional<Class<? extends ClosedBlocksFeature>> getFeature(final @NotNull NamespacedKey key);
 }

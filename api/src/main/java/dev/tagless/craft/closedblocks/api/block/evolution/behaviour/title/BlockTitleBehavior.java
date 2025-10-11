@@ -16,7 +16,7 @@ public abstract class BlockTitleBehavior extends BlockBehavior {
      * Creates a new behavior
      * @param block the behavior block
      */
-    public BlockTitleBehavior(final EvolvedBlock block) {
+    public BlockTitleBehavior(final @NotNull EvolvedBlock block) {
         super(block);
     }
 

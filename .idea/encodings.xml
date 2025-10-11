@@ -3,10 +3,16 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/api/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/api/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/blocks/closed-blocks-elevator/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/blocks/closed-blocks-elevator/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/blocks/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/blocks/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/common/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/common/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/implementations/closed-blocks-elevator/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/implementations/closed-blocks-elevator/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/implementations/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/implementations/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/spigot/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/spigot/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />

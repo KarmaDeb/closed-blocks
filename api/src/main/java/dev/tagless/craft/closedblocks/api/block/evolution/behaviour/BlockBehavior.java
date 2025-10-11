@@ -22,7 +22,7 @@ public abstract class BlockBehavior implements ClosedBlocksFeature, Predicate<Pl
      * Creates a new behavior
      * @param block the behavior block
      */
-    public BlockBehavior(final EvolvedBlock block) {
+    public BlockBehavior(final @NotNull EvolvedBlock block) {
         this.block = block;
     }
 

@@ -191,5 +191,5 @@ public interface EvolvedBlock extends ClosedBlocksFeature {
      * @param block the block in the world in where the evolved
      *              block was placed
      */
-    void place(final @NotNull Player player, final @NotNull Block block);
+    boolean place(final @NotNull Player player, final @NotNull Block block);
 }

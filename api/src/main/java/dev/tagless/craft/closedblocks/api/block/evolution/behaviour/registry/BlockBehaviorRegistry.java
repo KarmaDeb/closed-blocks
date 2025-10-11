@@ -15,31 +15,33 @@ public interface BlockBehaviorRegistry {
     /**
      * Registers a behavior
      * @param behavior the behavior to register
-     * @param <T> the behavior type
      */
-    <T extends BlockBehavior> void register(final @NotNull Class<T> behavior);
+    void register(final @NotNull Class<? extends BlockBehavior> behavior);
 
     /**
      * Enables a behavior
      * @param behavior the behavior to enable
-     * @param <T> the behavior type
      */
-    <T extends BlockBehavior> void enable(final @NotNull Class<T> behavior);
+    void enable(final @NotNull Class<? extends BlockBehavior> behavior);
 
     /**
      * Disables a behavior
      * @param behavior the behavior to disable
-     * @param <T> the behavior type
      */
-    <T extends BlockBehavior> void disable(final @NotNull Class<T> behavior);
+    void disable(final @NotNull Class<? extends BlockBehavior> behavior);
 
     /**
      * Get if a behavior is enabled
      * @param behavior the behavior to check for
      * @return if the behavior is enabled
-     * @param <T> the behavior type
      */
-    <T extends BlockBehavior> boolean isEnabled(final @NotNull Class<T> behavior);
+    boolean isEnabled(final @NotNull Class<? extends BlockBehavior> behavior);
+
+    /**
+     * Get if a behavior is registered
+     * @param behavior the behavior to check for
+     */
+    boolean isRegistered(final @NotNull Class<? extends BlockBehavior> behavior);
 
     /**
      * Enables the entire block behavior

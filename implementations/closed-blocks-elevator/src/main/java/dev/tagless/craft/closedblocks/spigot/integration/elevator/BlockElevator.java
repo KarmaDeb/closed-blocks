@@ -1,17 +1,24 @@
-package dev.tagless.craft.closedblocks.blocks.elevator;
+package dev.tagless.craft.closedblocks.spigot.integration.elevator;
 
 import dev.tagless.craft.closedblocks.api.ClosedBlocksAPI;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
+import dev.tagless.craft.closedblocks.api.block.Traversable;
 import dev.tagless.craft.closedblocks.api.block.evolution.Elevator;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.ProxiedBlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
-import dev.tagless.craft.closedblocks.blocks.Traversable;
-import org.bukkit.*;
+import dev.tagless.craft.closedblocks.api.material.MaterialLookupService;
+import dev.tagless.craft.closedblocks.api.material.MaterialProxy;
+import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -210,7 +217,12 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public void setMaterial(final @NotNull NamespacedKey material) {
-        this.material = material;
+        MaterialLookupService service = MaterialLookupService.getInstance();
+        service.getMaterial(material).ifPresent(proxy -> {
+            if (proxy.isBlock() && proxy.isSolid()) {
+                this.material = material;
+            }
+        });
     }
 
     /**
@@ -304,7 +316,7 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean canDestroy(final @NotNull Player player, final @Nullable ItemStack tool) {
-        return false;
+        return true;
     }
 
     /**
@@ -319,7 +331,7 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean canDestroy(final @NotNull Player player, final @NotNull NamespacedKey material) {
-        return false;
+        return true;
     }
 
     /**
@@ -348,8 +360,31 @@ public class BlockElevator implements Elevator {
      *               block was placed
      */
     @Override
-    public void place(final @NotNull Player player, final @NotNull Block block) {
+    public boolean place(final @NotNull Player player, final @NotNull Block block) {
+        if (!block.getWorld().getUID().equals(this.world) ||
+                block.getX() != this.x ||
+                block.getY() != this.y ||
+                block.getZ() != this.z ||
+                !player.getUniqueId().equals(this.player.getUniqueId())) {
+            return false;
+        }
 
+        MaterialLookupService service = MaterialLookupService.getInstance();
+
+        Optional<MaterialProxy> materialProxy = service.getMaterial(this.material);
+        if (materialProxy.isEmpty()) {
+            return false;
+        }
+
+        MaterialProxy material = materialProxy.get();
+        return material.generateBlock(block.getWorld(), block.getX(), block.getY(), block.getZ()).map(placed -> {
+            PersistentDataContainer container = placed.getChunk().getPersistentDataContainer();
+            container.set(this.generateKey("owner"), PersistentDataType.STRING, this.player.getUniqueId().toString());
+            container.set(this.generateKey("disguise"), PersistentDataType.STRING, this.material.toString());
+            // This data is needed later for re-construction of elevator instance
+
+            return true;
+        }).orElse(false);
     }
 
     private EvolvedBlockBehaviorRegistry getBehaviorRegistry() {
@@ -466,5 +501,13 @@ public class BlockElevator implements Elevator {
     @Override
     public int hashCode() {
         return Objects.hash(this.world, this.x, this.y, this.z);
+    }
+
+    private NamespacedKey generateKey(final String key) {
+        return NamespacedKey.fromString(String.format("cbe:elevator_%d_%d_%d_%s",
+                this.x,
+                this.y,
+                this.z,
+                key));
     }
 }

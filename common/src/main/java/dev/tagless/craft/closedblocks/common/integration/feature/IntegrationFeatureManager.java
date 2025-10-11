@@ -3,6 +3,7 @@ package dev.tagless.craft.closedblocks.common.integration.feature;
 import dev.tagless.craft.closedblocks.api.ClosedBlocksAPI;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
+import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
@@ -14,7 +15,8 @@ import dev.tagless.craft.closedblocks.common.block.BlockRegistry;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Stream;
 
 public class IntegrationFeatureManager implements FeatureManager {
 
@@ -54,6 +56,10 @@ public class IntegrationFeatureManager implements FeatureManager {
      */
     @Override
     public void register(final @NotNull Class<? extends ClosedBlocksFeature> feature) {
+        this.addFeature(feature);
+    }
+
+    private void addFeature(final @NotNull Class<? extends ClosedBlocksFeature> feature) {
         if (this.featureMap.hasValue(feature)) {
             return;
         }
@@ -83,9 +89,72 @@ public class IntegrationFeatureManager implements FeatureManager {
             EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
 
             registry.enable(feature.asSubclass(EvolvedBlock.class));
-            behaviorRegistry
-                    .get(feature.asSubclass(EvolvedBlock.class))
+            behaviorRegistry.get(feature.asSubclass(EvolvedBlock.class))
                     .ifPresent(BlockBehaviorRegistry::disable);
+        } else if (BlockBehavior.class.isAssignableFrom(feature)) {
+            Class<? extends BlockBehavior> behavior = feature.asSubclass(BlockBehavior.class);
+
+            EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
+            behaviorRegistry.getRegistries(behavior)
+                    .forEach(registry -> registry.enable(behavior));
+        }
+    }
+
+    /**
+     * Enables a feature for the specified elements
+     *
+     * @param feature  the feature to enable
+     * @param feature1 the feature for which to enable
+     * @param features the features for which to enable
+     */
+    @Override
+    public void enableFor(final @NotNull Class<? extends ClosedBlocksFeature> feature,
+                          final @NotNull Class<? extends ClosedBlocksFeature> feature1,
+                          final Class<?>... features) {
+        Collection<Class<? extends ClosedBlocksFeature> > subSet = new HashSet<>();
+        subSet.add(feature1);
+        for (Class<?> f : features) {
+            if (ClosedBlocksFeature.class.isAssignableFrom(f)) {
+                Class<? extends ClosedBlocksFeature> type = f.asSubclass(ClosedBlocksFeature.class);
+                if (ClosedBlocksFeature.canUse(feature, type)) {
+                    subSet.add(type);
+                }
+            }
+        }
+
+        if (subSet.isEmpty()) {
+            return;
+        }
+
+        this.register(feature);
+        subSet.forEach(this::addFeature);
+
+        if (BlockBehavior.class.isAssignableFrom(feature)) {
+            Class<? extends BlockBehavior> behavior = feature.asSubclass(BlockBehavior.class);
+
+            EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
+            Stream<Class<? extends EvolvedBlock>> blocks = subSet.stream()
+                    .filter(EvolvedBlock.class::isAssignableFrom)
+                    .map(f -> f.asSubclass(EvolvedBlock.class));
+
+            blocks.map(behaviorRegistry::get)
+                    .flatMap(Optional::stream)
+                    .forEach(registry -> {
+                        registry.register(behavior);
+                        registry.enable(behavior);
+                    });
+        } else if (EvolvedBlock.class.isAssignableFrom(feature)) {
+            EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
+            behaviorRegistry.get(feature.asSubclass(EvolvedBlock.class)).ifPresent(registry -> {
+                Stream<Class<? extends BlockBehavior>> behaviors = subSet.stream()
+                        .filter(BlockBehavior.class::isAssignableFrom)
+                        .map(f -> f.asSubclass(BlockBehavior.class));
+
+                behaviors.forEach(behavior -> {
+                    registry.register(behavior);
+                    registry.enable(behavior);
+                });
+            });
         }
     }
 
@@ -109,6 +178,12 @@ public class IntegrationFeatureManager implements FeatureManager {
             behaviorRegistry
                     .get(feature.asSubclass(EvolvedBlock.class))
                     .ifPresent(BlockBehaviorRegistry::disable);
+        } else if (BlockBehavior.class.isAssignableFrom(feature)) {
+            Class<? extends BlockBehavior> behavior = feature.asSubclass(BlockBehavior.class);
+
+            EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
+            behaviorRegistry.getRegistries(behavior)
+                    .forEach(registry -> registry.disable(behavior));
         }
     }
 
@@ -159,11 +234,12 @@ public class IntegrationFeatureManager implements FeatureManager {
      * @return the block feature
      */
     @Override
-    public @NotNull Optional<Class<? extends ClosedBlocksFeature>> getFeature(final NamespacedKey key) {
-        return this.featureMap.getValue(key);
+    @SuppressWarnings({"unchecked", "RedundantClassCall"})
+    public @NotNull Optional<Class<? extends ClosedBlocksFeature>> getFeature(final @NotNull NamespacedKey key) {
+        return Optional.class.cast(this.featureMap.getValue(key));
     }
 
-    private NamespacedKey generateFeatureKey(final Class<? extends ClosedBlocksFeature> feature) {
+    private NamespacedKey generateFeatureKey(final @NotNull Class<? extends ClosedBlocksFeature> feature) {
         if (this.featureMap.hasValue(feature)) {
             throw new IllegalArgumentException("Feature already exists");
         }

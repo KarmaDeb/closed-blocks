@@ -1,6 +1,6 @@
-package dev.tagless.craft.closedblocks.blocks;
+package dev.tagless.craft.closedblocks.api.block;
 
-import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.concurrent.ThreadSafe;
 import java.util.*;
@@ -8,8 +8,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+/**
+ * A traversable object represents a set of nodes
+ * which are sorted in a specific way.
+ * @param <T> the traversable block type
+ */
 @ThreadSafe
-public class Traversable<T extends EvolvedBlock> {
+public final class Traversable<T extends EvolvedBlock> {
 
     private final NavigableSet<T> path;
 
@@ -19,11 +24,20 @@ public class Traversable<T extends EvolvedBlock> {
 
     private int displayOffset = 0;
 
-    public Traversable(final Comparator<T> comparator) {
+    /**
+     * Create a new traversable object
+     * @param comparator the comparator for sorting
+     */
+    public Traversable(final @NotNull Comparator<T> comparator) {
         this.path = new ConcurrentSkipListSet<>(comparator);
     }
 
-    public boolean add(final T block) {
+    /**
+     * Adds a block
+     * @param block the block to add
+     * @return if the block was added
+     */
+    public boolean add(final @NotNull T block) {
         this.lock.writeLock().lock();
 
         try {
@@ -41,7 +55,12 @@ public class Traversable<T extends EvolvedBlock> {
         }
     }
 
-    public boolean remove(final T block) {
+    /**
+     * Removes a block
+     * @param block the block to remove
+     * @return if the block was removed
+     */
+    public boolean remove(final @NotNull T block) {
         this.lock.writeLock().lock();
 
         try {
@@ -56,7 +75,14 @@ public class Traversable<T extends EvolvedBlock> {
         }
     }
 
-    public void setDisplayIndex(T block, int displayIndex) {
+    /**
+     * Set a block display index. It's important to
+     * note that, changing any block display's index will
+     * also change its siblings recursively.
+     * @param block the block
+     * @param displayIndex the block display index
+     */
+    public void setDisplayIndex(final @NotNull T block, final int displayIndex) {
         lock.writeLock().lock();
         try {
             Integer idx = indexes.get(block);
@@ -67,7 +93,13 @@ public class Traversable<T extends EvolvedBlock> {
         }
     }
 
-    public int index(final T block) {
+    /**
+     * Get the index of a block. If the block
+     * is not present, -1 is returned
+     * @param block the block
+     * @return the block index
+     */
+    public int index(final @NotNull T block) {
         lock.readLock().lock();
         try {
             return indexes.getOrDefault(block, -1);
@@ -76,7 +108,15 @@ public class Traversable<T extends EvolvedBlock> {
         }
     }
 
-    public int displayIndex(final T block) {
+    /**
+     * Get the display index of a block. By default,
+     * the same value as {@link #index(EvolvedBlock)} is
+     * returned
+     * @param block the block to obtain the display
+     *              index for
+     * @return the block display index
+     */
+    public int displayIndex(final @NotNull T block) {
         lock.readLock().lock();
         try {
             int idx = indexes.getOrDefault(block, -1);
@@ -86,15 +126,38 @@ public class Traversable<T extends EvolvedBlock> {
         }
     }
 
-    public Optional<T> next(final T block) {
+    /**
+     * Get the next block to the specified
+     * one
+     * @param block the block
+     * @return the block next sibling
+     */
+    @NotNull
+    public Optional<T> next(final @NotNull T block) {
         return Optional.ofNullable(this.path.higher(block));
     }
 
-    public Optional<T> previous(final T block) {
+    /**
+     * Get the previous block to the specified
+     * one
+     * @param block the block
+     * @return the block previous sibling
+     */
+    @NotNull
+    public Optional<T> previous(final @NotNull T block) {
         return Optional.ofNullable(this.path.lower(block));
     }
 
-    public Optional<T> step(final T block, final int steps) {
+    /**
+     * Get the block steps away from the specified
+     * one. If the steps is negative, the iteration
+     * will be performed backwards
+     * @param block the block to obtain the sibling for
+     * @param steps the amount of steps to take
+     * @return the previous or next sibling
+     */
+    @NotNull
+    public Optional<T> step(final @NotNull T block, final int steps) {
         T current = block;
         int remainingSteps = Math.abs(steps);
 

@@ -5,7 +5,9 @@ import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.Collection;
 import java.util.Optional;
 
 /**
@@ -32,4 +34,13 @@ public interface EvolvedBlockBehaviorRegistry extends ClosedBlockRegistry {
      */
     @NotNull
     <T extends EvolvedBlock> Optional<? extends BlockBehaviorRegistry> get(final @NotNull Class<T> type);
+
+    /**
+     * Get all the behavior registries in where a block behavior
+     * has been registered
+     * @param feature the feature to lookup for
+     * @return all the registries which contains the feature
+     */
+    @NotNull @Unmodifiable
+    Collection<? extends BlockBehaviorRegistry> getRegistries(final @NotNull Class<? extends BlockBehavior> feature);
 }

@@ -1,19 +1,22 @@
-package dev.tagless.craft.closedblocks.blocks.elevator.behaviors;
+package dev.tagless.craft.closedblocks.spigot.integration.elevator.behaviors;
 
-import dev.tagless.craft.closedblocks.api.block.evolution.Elevator;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.title.BlockTitleBehavior;
+import dev.tagless.craft.closedblocks.spigot.integration.elevator.BlockElevator;
 import org.jetbrains.annotations.NotNull;
 
+import static dev.tagless.craft.closedblocks.api.extension.feature.ClosedBlocksFeature.IntendedFor;
+
+@IntendedFor(BlockElevator.class)
 public class ElevatorTitleBehavior extends BlockTitleBehavior {
 
-    private final Elevator block;
+    private final BlockElevator block;
 
     /**
      * Creates a new behavior
      *
      * @param block the behavior block
      */
-    public ElevatorTitleBehavior(final Elevator block) {
+    public ElevatorTitleBehavior(final @NotNull BlockElevator block) {
         super(block);
         this.block = block;
     }

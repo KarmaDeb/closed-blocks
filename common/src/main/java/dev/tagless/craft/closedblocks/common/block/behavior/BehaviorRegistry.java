@@ -2,14 +2,18 @@ package dev.tagless.craft.closedblocks.common.block.behavior;
 
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
+import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.common.block.BlockRegistry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class BehaviorRegistry implements EvolvedBlockBehaviorRegistry {
 
@@ -42,5 +46,20 @@ public class BehaviorRegistry implements EvolvedBlockBehaviorRegistry {
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Get all the behavior registries in where a block behavior
+     * has been registered
+     *
+     * @param feature the feature to lookup for
+     * @return all the registries which contains the feature
+     */
+    @Override
+    public @NotNull @Unmodifiable Collection<? extends BlockBehaviorRegistry> getRegistries(final @NotNull Class<? extends BlockBehavior> feature) {
+        return this.registryMap.values()
+                .stream()
+                .filter(registry -> registry.isRegistered(feature))
+                .collect(Collectors.toUnmodifiableSet());
     }
 }

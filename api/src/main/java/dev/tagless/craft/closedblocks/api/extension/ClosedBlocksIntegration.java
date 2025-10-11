@@ -1,7 +1,6 @@
 package dev.tagless.craft.closedblocks.api.extension;
 
 import dev.tagless.craft.closedblocks.api.extension.exception.NotInitializedException;
-import dev.tagless.craft.closedblocks.api.extension.feature.ClosedBlocksFeature;
 import dev.tagless.craft.closedblocks.api.extension.feature.FeatureManager;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
@@ -17,9 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.InputStream;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 /**
@@ -39,8 +36,6 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     private FeatureManager featureManager; //Modified through reflection
     private Plugin plugin; //Modified through reflection
 
-    private final Collection<? extends ClosedBlocksFeature> features = ConcurrentHashMap.newKeySet();
-
     /**
      * Get the integration name.
      * @return the name of the integration
@@ -54,13 +49,17 @@ public abstract class ClosedBlocksIntegration implements Plugin {
      * Enables the integration
      * @param reason the reason of why the integration was enabled
      */
-    public abstract void enable(final IntegrationStateReason reason);
+    public void enable(final @NotNull IntegrationStateReason reason) {
+
+    }
 
     /**
      * Disables the integration
      * @param reason the reason of why the integration was disabled
      */
-    public abstract void disable(final IntegrationStateReason reason);
+    public void disable(final @NotNull IntegrationStateReason reason) {
+
+    }
 
     /**
      * Get the integration feature manager
@@ -303,7 +302,7 @@ public abstract class ClosedBlocksIntegration implements Plugin {
      * @return Logger associated with this plugin
      */
     @Override
-    public @NotNull Logger getLogger() {
+    public final @NotNull Logger getLogger() {
         return this.plugin.getLogger();
     }
 
@@ -339,7 +338,7 @@ public abstract class ClosedBlocksIntegration implements Plugin {
      * to default to the command executor
      */
     @Override
-    public @Nullable List<String> onTabComplete(final @NotNull CommandSender sender, final @NotNull Command command,
+    public final @Nullable List<String> onTabComplete(final @NotNull CommandSender sender, final @NotNull Command command,
                                                 final @NotNull String label, final @NotNull String[] args) {
         return this.plugin.onTabComplete(sender, command, label, args);
     }
