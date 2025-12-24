@@ -17,9 +17,10 @@ pipeline {
         stage('Deploy') {
             steps {
                 configFileProvider([configFile(fileId: '214cc31c-3f09-41a6-9104-2d556ba49f95', variable: 'MAVEN_SETTINGS')]) {
+                    sh '''
                     echo "$GPG_KEY_CONTENT" | gpg --batch --import
-
-                    sh 'mvn clean deploy -s $MAVEN_SETTINGS -Pgpg-signing'
+                    mvn clean deploy -s $MAVEN_SETTINGS -Pgpg-signing
+                    '''
                 }
             }
         }
