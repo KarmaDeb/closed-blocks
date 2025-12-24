@@ -7,17 +7,6 @@ pipeline {
     }
 
     stages {
-        stage('Initialize') {
-            steps {
-                script {
-                    // This forces Jenkins to resolve the tool path and set it to JAVA_HOME
-                    def jdkPath = tool 'Java21'
-                    env.JAVA_HOME = "${jdkPath}"
-                    env.PATH = "${jdkPath}/bin:${env.PATH}"
-                }
-            }
-        }
-
         stage('Deploy') {
             steps {
                 withCredentials([
