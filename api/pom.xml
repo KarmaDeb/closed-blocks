@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.tagless</groupId>
         <artifactId>closed-blocks</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>closed-blocks-api</artifactId>
@@ -14,4 +14,17 @@
     <build>
         <finalName>closedblocks-api</finalName>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>tagless-releases</id>
+            <name>tagless-releases</name>
+            <url>https://nexus.tagfull.dev/repository/tagless-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>tagless-snapshots</id>
+            <name>tagless-snapshots</name>
+            <url>https://nexus.tagfull.dev/repository/tagless-snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>

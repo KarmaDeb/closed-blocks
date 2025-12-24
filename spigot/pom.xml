@@ -6,7 +6,7 @@
     <parent>
         <groupId>dev.tagless</groupId>
         <artifactId>closed-blocks</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>closed-blocks-spigot</artifactId>
@@ -47,7 +47,9 @@
         </dependency>
         <dependency>
             <groupId>dev.tagless</groupId>
-            <artifactId>closed-blocks-blocks</artifactId>
+            <artifactId>closed-blocks-elevator</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>
