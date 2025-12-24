@@ -12,7 +12,7 @@ pipeline {
                     string(credentialsId: 'proxy-creds', variable: 'PROXY_PASSWORD'),
                     string(credentialsId: 'gpg-creds', variable: 'GPG_PASSPHRASE')
                 ]) {
-                    configFileProvider([configFile(fileId: 'my-nexus-settings', variable: 'MAVEN_SETTINGS')]) {
+                    configFileProvider([configFile(fileId: 'tagless-nexus-settings', variable: 'MAVEN_SETTINGS')]) {
                         sh 'mvn clean deploy -s $MAVEN_SETTINGS -Pgpg-signing'
                     }
                 }
