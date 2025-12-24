@@ -1,9 +1,16 @@
 pipeline {
     agent any
+
     tools {
         jdk 'Java21'
         maven 'Maven3.9'
     }
+
+    environment {
+        JAVA_HOME = "${tool 'Java21'}"
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+    }
+
     stages {
         stage('Deploy') {
             steps {
