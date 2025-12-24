@@ -7,9 +7,8 @@ pipeline {
     }
 
     environment {
-        GPG_PASSPHRASE = credentials('GPG_PASSPHRASE')
+        MAVEN_GPG_PASSPHRASE = credentials('GPG_PASSPHRASE')
         NEXUS_PASSPHRASE = credentials('NEXUS_PASSPHRASE')
-        PROXY_PASSPHRASE = credentials('PROXY_PASSPHRASE')
         GPG_KEY_PATH = credentials('GPG_KEY_FILE')
     }
 
