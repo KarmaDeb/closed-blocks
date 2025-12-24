@@ -16,7 +16,6 @@ public class ClosedBlocksSpigotPlugin extends JavaPlugin {
     public void onEnable() {
         this.init.registerServices();
         this.init.loadIntegrations();
-        this.init.registerBlocks();
     }
 
     @Override
