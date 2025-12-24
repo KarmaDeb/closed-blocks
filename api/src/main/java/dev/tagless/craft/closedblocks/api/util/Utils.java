@@ -24,7 +24,9 @@ public final class Utils extends ReadonlyClass {
     }
 
     @NotNull
-    public static StackUtils stack() { return STACK_UTILS; }
+    public static StackUtils stack() {
+        return STACK_UTILS;
+    }
 
     @NotNull
     public static ReflectionUtils reflection() {
