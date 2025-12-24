@@ -10,7 +10,7 @@ pipeline {
         GPG_PASSPHRASE = credentials('GPG_PASSPHRASE')
         NEXUS_PASSPHRASE = credentials('NEXUS_PASSPHRASE')
         PROXY_PASSPHRASE = credentials('PROXY_PASSPHRASE')
-        GPG_KEY_CONTENT = credentials('GPG_PRIVATE_KEY')
+        GPG_KEY_PATH = credentials('GPG_KEY_FILE')
     }
 
     stages {
@@ -18,7 +18,9 @@ pipeline {
             steps {
                 configFileProvider([configFile(fileId: '214cc31c-3f09-41a6-9104-2d556ba49f95', variable: 'MAVEN_SETTINGS')]) {
                     sh '''
-                    echo "$GPG_KEY_CONTENT" | gpg --batch --import
+                    gpg --batch --import "${GPG_KEY_PATH}"
+                    gpg --list-secret-keys
+
                     mvn clean deploy -s $MAVEN_SETTINGS -Pgpg-signing
                     '''
                 }
