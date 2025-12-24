@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        GPG_PASSPHRASE = "$GPG_PASSPHRASE"
-        NEXUS_PASSPHRASE = "$NEXUS_PASSPHRASE"
+        GPG_PASSPHRASE = credentials('GPG_PASSPHRASE')
+        NEXUS_PASSWORD = credentials('NEXUS_PASSWORD')
     }
 
     stages {
