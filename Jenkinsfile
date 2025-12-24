@@ -6,12 +6,18 @@ pipeline {
         maven 'Maven3.9'
     }
 
-    environment {
-        JAVA_HOME = "${tool 'Java21'}"
-        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
-    }
-
     stages {
+        stage('Initialize') {
+            steps {
+                script {
+                    // This forces Jenkins to resolve the tool path and set it to JAVA_HOME
+                    def jdkPath = tool 'Java21'
+                    env.JAVA_HOME = "${jdkPath}"
+                    env.PATH = "${jdkPath}/bin:${env.PATH}"
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 withCredentials([
