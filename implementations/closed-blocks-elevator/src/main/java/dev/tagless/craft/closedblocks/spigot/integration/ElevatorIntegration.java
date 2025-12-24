@@ -6,6 +6,7 @@ import dev.tagless.craft.closedblocks.spigot.integration.elevator.BlockElevator;
 import dev.tagless.craft.closedblocks.spigot.integration.elevator.behaviors.ElevatorTitleBehavior;
 import org.jetbrains.annotations.NotNull;
 
+@SuppressWarnings("unused")
 public final class ElevatorIntegration extends ClosedBlocksIntegration {
 
     /**
@@ -15,7 +16,7 @@ public final class ElevatorIntegration extends ClosedBlocksIntegration {
      */
     @Override
     public void enable(final @NotNull IntegrationStateReason reason) {
-        this.getFeatureManager().enableFor(BlockElevator.class, ElevatorTitleBehavior.class);
+        this.getFeatureManager().enableFor(ElevatorTitleBehavior.class, BlockElevator.class);
     }
 
     /**
@@ -25,6 +26,7 @@ public final class ElevatorIntegration extends ClosedBlocksIntegration {
      */
     @Override
     public void disable(final @NotNull IntegrationStateReason reason) {
-
+        this.getFeatureManager().disable(ElevatorTitleBehavior.class);
+        this.getFeatureManager().disable(BlockElevator.class);
     }
 }

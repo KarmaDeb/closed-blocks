@@ -4,8 +4,8 @@ import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.IntegrationState;
 import dev.tagless.craft.closedblocks.api.extension.IntegrationStateReason;
-import dev.tagless.craft.closedblocks.blocks.elevator.BlockElevator;
 import dev.tagless.craft.closedblocks.common.block.BlockRegistry;
+import dev.tagless.craft.closedblocks.common.exception.ServiceRegistrationException;
 import dev.tagless.craft.closedblocks.common.integration.IntegrationInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
@@ -32,25 +32,25 @@ public class ClosedBlocksInit {
     }
 
     public void registerServices() {
-        /*if (Bukkit.getServicesManager().load(EvolvedBlockRegistry.class) != null) {
-            throw new IllegalStateException("Refusing to load ClosedBlocks because another plugin has already registered the EvolvedBlockRegistry service");
+        if (Bukkit.getServicesManager().load(EvolvedBlockRegistry.class) != null) {
+            throw new ServiceRegistrationException(EvolvedBlockRegistry.class);
         }
 
         BlockRegistry blockRegistry = new BlockRegistry();
-        Bukkit.getServicesManager().register(EvolvedBlockRegistry.class, blockRegistry, this.api.getPlugin(), ServicePriority.Highest);*/
+        Bukkit.getServicesManager().register(EvolvedBlockRegistry.class, blockRegistry, this.api.getPlugin(), ServicePriority.Highest);
     }
 
     public void loadIntegrations() {
         for (IntegrationInfo info : integrationInfos) {
             Plugin matchingPlugin = Bukkit.getPluginManager().getPlugin(info.plugin().getName());
             if (matchingPlugin == null) {
-                this.api.getPlugin().getLogger().log(Level.WARNING, "Not loading integration {} because its plugin ({}) has not been loaded", new Object[]{
-                        info.integrationName(),
-                        info.plugin().getName()
-                });
+                this.api.getPlugin().getLogger().log(Level.WARNING,
+                        "Not loading integration {} because its plugin ({}) has not been loaded",
+                        new Object[]{info.integrationName(), info.plugin().getName()});
                 continue;
             }
-            this.api.getPlugin().getLogger().log(Level.INFO, "Loading integration {}", new Object[]{ info.integrationName() });
+            this.api.getPlugin().getLogger().log(Level.INFO, "Loading integration {}",
+                    new Object[]{info.integrationName()});
 
             this.api.getStateManager().createIntegration(info).ifPresent(integration -> {
                 this.api.getStateManager().initIntegration(integration, matchingPlugin);
@@ -59,7 +59,7 @@ public class ClosedBlocksInit {
                 this.api.getIntegrationManager().add(integration);
             });
         }
-        integrationInfos = null; //Free up memory
+        integrationInfos = null;
 
         // https://www.spigotmc.org/threads/how-to-make-plugin-load-after-all-plugins.284987/#post-2754465
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.api.getPlugin(), () -> {
@@ -67,12 +67,6 @@ public class ClosedBlocksInit {
                 this.api.getStateManager().setState(integration, IntegrationState.ENABLED);
                 integration.enable(IntegrationStateReason.PLUGIN);
             }
-        });
-    }
-
-    public void registerBlocks() {
-        this.api.getRegistry(BlockRegistry.class).ifPresent(registry -> {
-            registry.register(this.api.getPlugin(), BlockElevator.class);
         });
     }
 }

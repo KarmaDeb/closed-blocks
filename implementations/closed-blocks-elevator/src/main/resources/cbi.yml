@@ -1,0 +1,2 @@
+name: 'Elevator'
+class: 'dev.tagless.craft.closedblocks.spigot.integration.ElevatorIntegration'
