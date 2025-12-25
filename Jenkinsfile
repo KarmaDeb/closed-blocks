@@ -18,11 +18,14 @@ pipeline {
                 configFileProvider([configFile(fileId: '214cc31c-3f09-41a6-9104-2d556ba49f95', variable: 'MAVEN_SETTINGS')]) {
                     sh '''
                     gpg --batch --import "${GPG_KEY_PATH}"
-                    gpg --list-secret-keys
-
                     mvn clean deploy -s $MAVEN_SETTINGS -Pgpg-signing
                     '''
                 }
+            }
+        }
+        post {
+            success {
+                archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
             }
         }
     }
