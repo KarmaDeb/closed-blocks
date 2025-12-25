@@ -1,18 +1,25 @@
 package dev.tagless.craft.closedblocks.spigot;
 
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
+import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
+import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.IntegrationState;
 import dev.tagless.craft.closedblocks.api.extension.IntegrationStateReason;
+import dev.tagless.craft.closedblocks.api.material.MaterialLookupService;
 import dev.tagless.craft.closedblocks.common.block.BlockRegistry;
+import dev.tagless.craft.closedblocks.common.block.behavior.BlockBehaviorsRegistry;
 import dev.tagless.craft.closedblocks.common.exception.ServiceRegistrationException;
 import dev.tagless.craft.closedblocks.common.integration.IntegrationInfo;
+import dev.tagless.craft.closedblocks.common.lookup.MaterialsLookup;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.ServicePriority;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 public class ClosedBlocksInit {
@@ -32,12 +39,34 @@ public class ClosedBlocksInit {
     }
 
     public void registerServices() {
-        if (Bukkit.getServicesManager().load(EvolvedBlockRegistry.class) != null) {
-            throw new ServiceRegistrationException(EvolvedBlockRegistry.class);
+        this.addService(EvolvedBlockRegistry.class, this.api.getRegistry(BlockRegistry.class)::orElseThrow);
+        this.addService(EvolvedBlockBehaviorRegistry.class,
+                this.api.getRegistry(EvolvedBlockBehaviorRegistry.class)::orElseThrow);
+        this.addService(BlockBehaviorRegistry.class, BlockBehaviorsRegistry::new);
+        this.addService(MaterialLookupService.class, () -> new MaterialsLookup(this.api.getPlugin()));
+    }
+
+    private <T> void addService(final Class<T> service, final Supplier<? extends T> provider) {
+        if (Bukkit.getServicesManager().load(service) != null) {
+            throw new ServiceRegistrationException(service);
         }
 
-        BlockRegistry blockRegistry = new BlockRegistry();
-        Bukkit.getServicesManager().register(EvolvedBlockRegistry.class, blockRegistry, this.api.getPlugin(), ServicePriority.Highest);
+        String svcName = service.getSimpleName();
+        try {
+            Field serviceName = service.getDeclaredField("SERVICE_NAME");
+            serviceName.setAccessible(true);
+
+            svcName = String.valueOf(serviceName.get(service));
+        } catch (ReflectiveOperationException ignored) {}
+
+        this.api.getPlugin().getLogger().log(
+                Level.INFO,
+                "Registering {} as a Bukkit service",
+                svcName
+        );
+
+        T instance = provider.get();
+        Bukkit.getServicesManager().register(service, instance, this.api.getPlugin(), ServicePriority.Highest);
     }
 
     public void loadIntegrations() {

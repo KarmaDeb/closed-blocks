@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class MaterialsLookup implements MaterialLookupService {
 
@@ -55,18 +55,17 @@ public final class MaterialsLookup implements MaterialLookupService {
             );
         }
 
-        return this.getServices().stream()
+        return this.getServices()
                 .filter(service -> service.test(key))
                 .findFirst()
                 .flatMap(s -> s.getMaterial(key));
     }
 
-    private Collection<MaterialLookupService> getServices() {
+    private Stream<MaterialLookupService> getServices() {
         return Bukkit.getServicesManager().getRegistrations(MaterialLookupService.class)
                 .stream()
                 .map(RegisteredServiceProvider::getProvider)
-                .filter(service -> !service.equals(this))
-                .collect(Collectors.toList());
+                .filter(service -> !service.equals(this));
     }
 
     /**
