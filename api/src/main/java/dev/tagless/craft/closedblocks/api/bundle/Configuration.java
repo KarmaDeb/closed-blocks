@@ -1,4 +1,4 @@
-package dev.tagless.craft.closedblocks.api.localization;
+package dev.tagless.craft.closedblocks.api.bundle;
 
 import dev.tagless.craft.closedblocks.api.util.data.OptionalList;
 import org.jetbrains.annotations.NotNull;

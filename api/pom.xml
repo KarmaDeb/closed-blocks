@@ -15,6 +15,16 @@
         <finalName>closedblocks-api</finalName>
     </build>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.3.1-jre</version>
+            <scope>provided</scope>
+            <!-- Provided by spigot, paper, etc -->
+        </dependency>
+    </dependencies>
+
     <distributionManagement>
         <repository>
             <id>tagless-releases</id>

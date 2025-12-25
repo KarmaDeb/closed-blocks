@@ -3,6 +3,7 @@ package dev.tagless.craft.closedblocks.api.extension;
 import dev.tagless.craft.closedblocks.api.annotation.Doppelganger;
 import dev.tagless.craft.closedblocks.api.extension.exception.NotInitializedException;
 import dev.tagless.craft.closedblocks.api.extension.feature.FeatureManager;
+import dev.tagless.craft.closedblocks.api.extension.resource.ResourceDirectory;
 import org.bukkit.Server;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -16,9 +17,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.List;
+import java.lang.ref.WeakReference;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 import java.util.logging.Logger;
 
 /**
@@ -36,6 +40,7 @@ public abstract class ClosedBlocksIntegration implements Plugin {
 
     private static final String FEATURE_FEATURE_MANAGER = "featureManager";
     private static final String FEATURE_PLUGIN = "plugin";
+    private static final String FEATURE_RESOURCE = "resourceRoot";
 
     @SuppressWarnings("FieldMayBeFinal")
     private IntegrationState state = IntegrationState.UNLOADED; //Modified through reflection
@@ -46,6 +51,8 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     private FeatureManager featureManager; //Modified through reflection
     @SuppressWarnings("unused")
     private Plugin plugin; //Modified through reflection
+
+    private WeakReference<ResourceDirectory> resource;
 
     /**
      * Get the integration name.
@@ -153,6 +160,33 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     @Override
     public final @Nullable InputStream getResource(final @NotNull String filename) {
         return this.plugin.getResource(filename);
+    }
+
+    /**
+     * Gets the current jar file as a resource
+     * @return the jar file as a resource
+     */
+    public final @NotNull ResourceDirectory getResourceRoot() {
+        if (this.plugin == null) {
+            throw new NotInitializedException(this, ClosedBlocksIntegration.FEATURE_RESOURCE);
+        }
+
+        ResourceDirectory current = this.resource.get();
+        if (current != null) {
+            return current;
+        }
+
+        try {
+            URI location = this.plugin.getClass().getProtectionDomain().getCodeSource().getLocation().toURI();
+            File file = new File(location);
+
+            ResourceDirectory dir = ResourceDirectory.load(file);
+            this.resource = new WeakReference<>(dir);
+
+            return dir;
+        } catch (URISyntaxException | IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
