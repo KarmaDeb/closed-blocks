@@ -3,7 +3,7 @@ main: 'dev.tagless.craft.closedblocks.spigot.ClosedBlocksSpigotPlugin'
 version: '${full.version}'
 author: 'tagless'
 
-description: 'ClosedBlocks provide multiple blocks which enhance the vanilla experience of your minecraft server in various ways'
+description: 'ClosedBlocks provide multiple blocks which enhance the vanilla experience of your Minecraft server in various ways'
 api-version: '1.21'
 
 load: STARTUP
