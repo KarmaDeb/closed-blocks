@@ -396,7 +396,7 @@ public abstract class ClosedBlocksIntegration implements Plugin {
      * @return the localization of the integration
      */
     @NotNull @SuppressWarnings("unused")
-    public LocalizationBundle getBundle() {
+    public final LocalizationBundle getBundle() {
         return this.localization;
     }
 
