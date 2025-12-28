@@ -1,18 +1,16 @@
 package dev.tagless.craft.closedblocks.common.i18n;
 
-import dev.tagless.craft.closedblocks.api.bundle.Localization;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import dev.tagless.craft.closedblocks.api.bundle.locale.Localization;
+import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
+import dev.tagless.craft.closedblocks.api.util.data.OptionalList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
+import java.util.logging.Level;
 
-@Getter
-@AllArgsConstructor
-public class IntegrationLocalization implements Localization {
-
-    private final Locale locale;
-    private final PropertyResourceBundle prb;
+public record IntegrationLocalization(ClosedBlocksIntegration integration,
+                                      Locale locale,
+                                      PropertyResourceBundle prb) implements Localization {
 
     /**
      * Get the localization locale
@@ -20,7 +18,7 @@ public class IntegrationLocalization implements Localization {
      * @return the locale
      */
     @Override
-    public @NotNull Locale getLocale() {
+    public @NotNull Locale locale() {
         return this.locale;
     }
 
@@ -31,8 +29,14 @@ public class IntegrationLocalization implements Localization {
      * @return the localization
      */
     @Override
-    public Optional<String> getString(final String key) {
+    public @NotNull Optional<String> getString(final @NotNull String key) {
         if (!this.prb.containsKey(key)) {
+            this.integration.getLogger().log(Level.WARNING, "Missing localization key {} for locale {}",
+                    new Object[]{
+                            key,
+                            this.locale.toLanguageTag()
+                    });
+
             return Optional.empty();
         }
 
@@ -46,11 +50,19 @@ public class IntegrationLocalization implements Localization {
      * @return the localization
      */
     @Override
-    public List<String> getStringList(final String key) {
+    public @NotNull OptionalList<String> getStringList(final @NotNull String key) {
         if (!this.prb.containsKey(key)) {
-            return Collections.emptyList();
+            this.integration.getLogger().log(Level.WARNING, "Missing localization key {} for locale {}",
+                    new Object[]{
+                            key,
+                            this.locale.toLanguageTag()
+                    });
+
+            return OptionalList.empty();
         }
 
-        return Arrays.asList(this.prb.getStringArray(key));
+        return OptionalList.collect(
+                Arrays.asList(this.prb.getStringArray(key))
+        );
     }
 }

@@ -1,6 +1,7 @@
 package dev.tagless.craft.closedblocks.api.extension;
 
 import dev.tagless.craft.closedblocks.api.annotation.Doppelganger;
+import dev.tagless.craft.closedblocks.api.bundle.locale.LocalizationBundle;
 import dev.tagless.craft.closedblocks.api.extension.exception.NotInitializedException;
 import dev.tagless.craft.closedblocks.api.extension.feature.FeatureManager;
 import dev.tagless.craft.closedblocks.api.extension.resource.ResourceDirectory;
@@ -51,6 +52,8 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     private FeatureManager featureManager; //Modified through reflection
     @SuppressWarnings("unused")
     private Plugin plugin; //Modified through reflection
+    @SuppressWarnings("unused")
+    private LocalizationBundle localization; //Modified through reflection
 
     private WeakReference<ResourceDirectory> resource;
 
@@ -386,6 +389,15 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     public final @Nullable List<String> onTabComplete(final @NotNull CommandSender sender, final @NotNull Command command,
                                                 final @NotNull String label, final @NotNull String[] args) {
         return this.plugin.onTabComplete(sender, command, label, args);
+    }
+
+    /**
+     * Get the integration's localization
+     * @return the localization of the integration
+     */
+    @NotNull @SuppressWarnings("unused")
+    public LocalizationBundle getBundle() {
+        return this.localization;
     }
 
     /**

@@ -83,7 +83,9 @@ public class ClosedBlocksInit {
 
             this.api.getStateManager().createIntegration(info).ifPresent(integration -> {
                 this.api.getStateManager().initIntegration(integration, matchingPlugin);
-                this.api.getStateManager().setState(integration, IntegrationState.LOADED);
+                if (!integration.getState().equals(IntegrationState.DEGRADED)) {
+                    this.api.getStateManager().setState(integration, IntegrationState.LOADED);
+                }
 
                 this.api.getIntegrationManager().add(integration);
             });
@@ -93,7 +95,9 @@ public class ClosedBlocksInit {
         // https://www.spigotmc.org/threads/how-to-make-plugin-load-after-all-plugins.284987/#post-2754465
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.api.getPlugin(), () -> {
             for (ClosedBlocksIntegration integration : this.api.getIntegrationManager().getIntegrations()) {
-                this.api.getStateManager().setState(integration, IntegrationState.ENABLED);
+                if (integration.getState().equals(IntegrationState.LOADED)) {
+                    this.api.getStateManager().setState(integration, IntegrationState.ENABLED);
+                }
                 integration.enable(IntegrationStateReason.PLUGIN);
             }
         });

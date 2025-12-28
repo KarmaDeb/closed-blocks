@@ -1,7 +1,9 @@
 package dev.tagless.craft.closedblocks.common.integration;
 
+import dev.tagless.craft.closedblocks.api.bundle.locale.LocalizationBundle;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.IntegrationState;
+import dev.tagless.craft.closedblocks.common.i18n.IntegrationLocalizationBundle;
 import dev.tagless.craft.closedblocks.common.integration.exception.PartialIntegrationException;
 import dev.tagless.craft.closedblocks.common.integration.feature.IntegrationFeatureManager;
 import org.bukkit.plugin.Plugin;
@@ -114,6 +116,20 @@ public final class IntegrationStateManager {
             pluginField.setAccessible(true);
             pluginField.set(integration, plugin);
             pluginField.setAccessible(false);
+
+            LocalizationBundle bundle = IntegrationLocalizationBundle.empty(integration);
+            try {
+                bundle = new IntegrationLocalizationBundle(integration);
+            } catch (IOException ex) {
+                setState(integration, IntegrationState.DEGRADED);
+                this.logger.log(Level.WARNING, String.format("Failed to initialize localization for integration %s",
+                                integration.getName()), ex);
+            }
+
+            Field bundleField = ClosedBlocksIntegration.class.getDeclaredField("localization");
+            bundleField.setAccessible(true);
+            bundleField.set(integration, bundle);
+            bundleField.setAccessible(false);
         } catch (ReflectiveOperationException ex) {
             this.logger.log(Level.SEVERE, "Failed to initialize integration {}", new Object[]{integration.getName()});
         }

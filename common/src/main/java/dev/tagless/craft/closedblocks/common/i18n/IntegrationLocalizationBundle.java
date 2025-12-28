@@ -1,8 +1,13 @@
 package dev.tagless.craft.closedblocks.common.i18n;
 
+import dev.tagless.craft.closedblocks.api.bundle.locale.Localization;
+import dev.tagless.craft.closedblocks.api.bundle.locale.LocalizationBundle;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.resource.ResourceFile;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,50 +19,61 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
-public class LocalizationBundle {
+public class IntegrationLocalizationBundle implements LocalizationBundle {
 
-    private final ClosedBlocksIntegration integration;
+    @NotNull
+    private ClosedBlocksIntegration integration;
     private final Map<Locale, IntegrationLocalization> bundleMap = new HashMap<>();
 
     private IntegrationLocalization defaultBundle;
 
-    public LocalizationBundle(final ClosedBlocksIntegration integration) throws IOException {
+    @SuppressWarnings({"NullableProblems", "ConstantValue"})
+    public IntegrationLocalizationBundle(final @NotNull ClosedBlocksIntegration integration) throws IOException {
         this.integration = integration;
-        Set<ResourceFile> localizations = this.integration.getResourceRoot().glob(
-                "i18n/messages{_*,}.properties").stream().filter(i -> !i.isDirectory())
-                .map(ResourceFile.class::cast)
-                .collect(Collectors.toUnmodifiableSet());
+        if (integration != null) {
+            Set<ResourceFile> localizations = this.integration.getResourceRoot()
+                    .glob("i18n/messages{_*,}.properties")
+                    .stream()
+                    .filter(i -> !i.isDirectory())
+                    .map(ResourceFile.class::cast)
+                    .collect(Collectors.toUnmodifiableSet());
 
-        if (localizations.isEmpty()) {
-            this.integration.getLogger().log(Level.WARNING, "Cannot load resource bundle from integration {}",
-                    this.integration.getName());
-            return;
+            if (localizations.isEmpty()) {
+                this.integration.getLogger().log(Level.INFO, "Integration {} does not provide any localization",
+                        this.integration.getName());
+                return;
+            }
+
+            this.scan(localizations);
         }
-
-        this.scan(localizations);
     }
 
-    public IntegrationLocalization getLocalization(final Locale locale) {
-        IntegrationLocalization i = this.bundleMap.get(locale);
-        if (i == null) {
+    /**
+     * Get a locale of the bundle
+     *
+     * @param locale the locale to get for
+     * @return the bundle locale
+     * @throws IllegalStateException if there's no localization for the
+     * provided locale
+     */
+    @Override
+    public @NotNull Localization get(final @Nullable Locale locale) throws IllegalStateException {
+        IntegrationLocalization i = this.defaultBundle;
+        if (locale != null) {
             for (IntegrationLocalization i18n : this.bundleMap.values()) {
-                if (i18n.getLocale().getCountry().equals(locale.getCountry())) {
+                if (i18n.locale().getCountry().equals(locale.getCountry())) {
                     i = i18n;
                 }
 
-                if (i18n.getLocale().getLanguage().equals(locale.getLanguage())) {
+                if (i18n.locale().getLanguage().equals(locale.getLanguage())) {
                     return i18n;
                 }
-            }
-
-            if (i == null) {
-                i = this.defaultBundle;
             }
         }
 
         if (i == null) {
             throw new IllegalStateException(String.format("Integration does not provide localization for %s",
-                    locale.toLanguageTag()));
+                    locale == null ? "default" : locale.toLanguageTag()));
         }
 
         return i;
@@ -130,9 +146,9 @@ public class LocalizationBundle {
                     locale = Locale.of(data[0], data[1]);
                 }
 
-                bundleMap.put(locale, new IntegrationLocalization(locale, prb));
+                bundleMap.put(locale, new IntegrationLocalization(this.integration, locale, prb));
             } else {
-                defaultBundle = new IntegrationLocalization(Locale.getDefault(), prb);
+                defaultBundle = new IntegrationLocalization(this.integration, Locale.getDefault(), prb);
             }
         }
 
@@ -140,6 +156,25 @@ public class LocalizationBundle {
             this.integration.getLogger().log(Level.WARNING,
                     "Integration {} does not provide a default localization.",
                     this.integration.getName());
+
+            try (InputStream emptyStream = new ByteArrayInputStream(new byte[0])) {
+                this.defaultBundle = new IntegrationLocalization(this.integration, Locale.getDefault(),
+                        new PropertyResourceBundle(emptyStream));
+            }
         }
+    }
+
+    @SuppressWarnings("DataFlowIssue")
+    public static IntegrationLocalizationBundle empty(final ClosedBlocksIntegration integration) {
+        try(InputStream emptyStream = new ByteArrayInputStream(new byte[0])) {
+            IntegrationLocalizationBundle b = new IntegrationLocalizationBundle(null);
+            b.integration = integration;
+            b.defaultBundle = new IntegrationLocalization(integration, Locale.getDefault(),
+                    new PropertyResourceBundle(emptyStream));
+
+            return b;
+        } catch (IOException ignored) {}
+
+        return null; //never
     }
 }
