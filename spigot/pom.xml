@@ -46,13 +46,6 @@
             <artifactId>closed-blocks-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>dev.tagless</groupId>
-            <artifactId>closed-blocks-elevator</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
