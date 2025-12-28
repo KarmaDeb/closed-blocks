@@ -23,8 +23,7 @@ public final class MaterialsLookup implements MaterialLookupService {
     private final Map<NamespacedKey, WeakReference<ProxiedMaterial>> vanillaMaterialsCache = new ConcurrentHashMap<>();
 
     @NotNull
-    private final Registry<Material> materialRegistry = Objects.requireNonNull(Bukkit.getRegistry(Material.class),
-            "Could not find material registry, which is impossible. Are we running on a bukkit based server?");
+    private final Registry<Material> materialRegistry = Registry.MATERIAL;
 
     public MaterialsLookup(final @NotNull Plugin plugin) {
         this.plugin = plugin;

@@ -46,3 +46,10 @@ build/
 /implementations/closed-blocks-elevator/staging/
 /spigot/staging/
 /staging/
+/api/snapshot-staging/
+/blocks/snapshot-staging/
+/common/snapshot-staging/
+/implementations/snapshot-staging/
+/implementations/closed-blocks-elevator/snapshot-staging/
+/spigot/snapshot-staging/
+/snapshot-staging/
