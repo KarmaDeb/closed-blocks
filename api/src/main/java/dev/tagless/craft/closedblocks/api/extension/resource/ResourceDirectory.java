@@ -5,10 +5,7 @@ import com.google.common.io.FileBackedOutputStream;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.PathMatcher;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -68,6 +65,83 @@ public final class ResourceDirectory implements ResourceItem {
     @Override
     public boolean isDirectory() {
         return true;
+    }
+
+    /**
+     * Exports the resource into the specified directory. If the item is
+     * a directory, and the provided path is not a directory, the method
+     * might remove or fail the file depending on the passed strategies.
+     * If the item is a file, and the destination is a file too, the file
+     * contents might be replaced, appended or fail depending on strategy.
+     * If otherwise, the destination is a directory, the file will be then
+     * exported to a file named as {@link #getName()} in that directory, following
+     * then the same logic as if destination was a file.
+     *
+     * @param destination the directory/file to export to
+     * @param strategies  the write strategies
+     * @return a collection of created files
+     * @throws IOException if the export fails
+     */
+    @Override
+    public Collection<Path> export(final @NotNull Path destination, final WriteStrategy... strategies) throws IOException {
+        Path exportTo = destination.toAbsolutePath().resolve(this.name);
+        EnumSet<WriteStrategy> s = EnumSet.noneOf(WriteStrategy.class);
+        s.addAll(Arrays.asList(strategies));
+
+        if (!Files.exists(exportTo) && s.contains(WriteStrategy.FAIL)) {
+            throw new IOException(String.format("Cannot export directory %s to %s. (Directory do not exists)",
+                    this.name, exportTo.getParent()));
+        }
+
+        if (Files.exists(exportTo) && !Files.isDirectory(exportTo) && s.contains(WriteStrategy.FAIL)) {
+            throw new IOException(String.format("Cannot export directory %s to %s. (Exists as file)",
+                    this.name, exportTo.getParent()));
+        }
+
+        Path tmpOld = null;
+
+        if (Files.exists(exportTo) && !Files.isDirectory(exportTo) && s.contains(WriteStrategy.REMOVE)) {
+            tmpOld = Files.createTempFile("rd-tmp", exportTo.getFileName().toString());
+        } else if (Files.exists(exportTo) && Files.isDirectory(exportTo) && s.contains(WriteStrategy.REMOVE)) {
+            tmpOld = Files.createTempDirectory(String.format("rd-tmp%s", exportTo.getFileName()));
+        }
+
+        if (tmpOld != null) {
+            Files.move(exportTo, tmpOld, StandardCopyOption.COPY_ATTRIBUTES);
+            tmpOld.toFile().deleteOnExit();
+        }
+
+        if (!Files.exists(exportTo)) {
+            Files.createDirectories(exportTo);
+        }
+
+        Set<Path> createdFiles = new LinkedHashSet<>();
+        IOException error = null;
+        for (ResourceItem item : this.items.values()) {
+            try {
+                Collection<Path> c = item.export(exportTo, strategies);
+                createdFiles.addAll(c);
+            } catch (IOException ex) {
+                error = ex;
+                break;
+            }
+        }
+
+        if (error != null) {
+            createdFiles.forEach(p -> {
+                try {
+                    Files.deleteIfExists(p);
+                } catch (IOException ignored) {}
+            });
+            Files.delete(exportTo);
+            if (tmpOld != null) {
+                Files.move(tmpOld, exportTo);
+            }
+
+            throw error;
+        }
+
+        return Collections.unmodifiableSet(createdFiles);
     }
 
     /**

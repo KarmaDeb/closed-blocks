@@ -4,6 +4,11 @@ import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.resource.ResourceFile;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -59,8 +64,64 @@ public class LocalizationBundle {
     }
 
     private void scan(final Set<ResourceFile> items) throws IOException {
+        Path out = this.integration.getDataFolder().toPath().resolve("i18n");
+        if (!Files.exists(out)) {
+            Files.createDirectories(out);
+        }
+
         for (ResourceFile file : items) {
-            PropertyResourceBundle prb = new PropertyResourceBundle(file.getData());
+            Path filePath = out.resolve(file.getName());
+
+            Properties properties = new Properties();
+            PropertyResourceBundle prb;
+            if (!Files.exists(filePath)) {
+                file.export(out);
+                prb = new PropertyResourceBundle(file.getData());
+                for (String k : prb.keySet()) {
+                    properties.put(k, prb.getObject(k));
+                }
+            } else {
+                properties.load(file.getData());
+                try (InputStream in = Files.newInputStream(filePath)) {
+                    prb = new PropertyResourceBundle(in);
+                }
+            }
+
+            if (!prb.containsKey("version") && !properties.containsKey("version")) {
+                this.integration.getLogger().log(Level.WARNING,
+                        "Missing version property in i18n for integration {} ({})",
+                        new Object[]{this.integration.getName(),
+                        filePath.getFileName()});
+            } else {
+                String exported = null;
+                String internal = properties.getProperty("version");
+                try {
+                    exported = prb.getString("version");
+                } catch (MissingResourceException ignored) {}
+
+                if (!internal.equals(exported)) {
+                    this.integration.getLogger().log(Level.INFO, "Updating localization {} of {} from {} to {}",
+                            new Object[]{
+                                    filePath.getFileName(),
+                                    this.integration.getName(),
+                                    exported == null ? "0" : exported,
+                                    internal
+                            });
+
+                    for (String key : prb.keySet()) {
+                        if (key.equals("version")) {
+                            continue;
+                        }
+
+                        properties.setProperty(key, prb.getString(key));
+                    }
+
+                    try (OutputStream o = Files.newOutputStream(filePath, StandardOpenOption.CREATE)) {
+                        properties.store(o, "");
+                    }
+                }
+            }
+
             String name = file.getName().substring(8);
             if (name.startsWith("_")) {
                 String[] data = name.substring(1).split("_");

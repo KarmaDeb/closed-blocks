@@ -182,5 +182,10 @@
             <name>Internal repo</name>
             <url>file:${project.basedir}/staging/${project.artifactId}/v${project.version}</url>
         </repository>
+        <snapshotRepository>
+            <id>internal.repo</id>
+            <name>Internal repo</name>
+            <url>file:${project.basedir}/snapshot-staging/${project.artifactId}/v${project.version}</url>
+        </snapshotRepository>
     </distributionManagement>
 </project>
