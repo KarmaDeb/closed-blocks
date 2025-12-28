@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
@@ -39,7 +38,7 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
                     .collect(Collectors.toUnmodifiableSet());
 
             if (localizations.isEmpty()) {
-                this.integration.getLogger().log(Level.INFO, "Integration {} does not provide any localization",
+                this.integration.logger().info("Integration {} does not provide any localization",
                         this.integration.getName());
                 return;
             }
@@ -104,10 +103,9 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
             }
 
             if (!prb.containsKey("version") && !properties.containsKey("version")) {
-                this.integration.getLogger().log(Level.WARNING,
-                        "Missing version property in i18n for integration {} ({})",
-                        new Object[]{this.integration.getName(),
-                        filePath.getFileName()});
+                this.integration.logger().warn("Missing version property in i18n for integration {} ({})",
+                        this.integration.getName(),
+                        filePath.getFileName());
             } else {
                 String exported = null;
                 String internal = properties.getProperty("version");
@@ -116,13 +114,11 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
                 } catch (MissingResourceException ignored) {}
 
                 if (!internal.equals(exported)) {
-                    this.integration.getLogger().log(Level.INFO, "Updating localization {} of {} from {} to {}",
-                            new Object[]{
-                                    filePath.getFileName(),
-                                    this.integration.getName(),
-                                    exported == null ? "0" : exported,
-                                    internal
-                            });
+                    this.integration.logger().info("Updating localization {} of {} from {} to {}",
+                            filePath.getFileName(),
+                            this.integration.getName(),
+                            exported == null ? "0" : exported,
+                            internal);
 
                     for (String key : prb.keySet()) {
                         if (key.equals("version")) {
@@ -138,23 +134,24 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
                 }
             }
 
-            String name = file.getName().substring(8);
+            String name = file.getName().substring(8).replaceAll("\\..*$", "");
             if (name.startsWith("_")) {
                 String[] data = name.substring(1).split("_");
-                Locale locale = Locale.of(data[0]);
+                Locale outLocale = Locale.of(data[0]);
                 if (data.length > 1) {
-                    locale = Locale.of(data[0], data[1]);
+                    outLocale = Locale.of(data[0], data[1]);
                 }
 
-                bundleMap.put(locale, new IntegrationLocalization(this.integration, locale, prb));
+                this.integration.logger().info("Loaded localization for {} from {}",
+                        outLocale, this.integration.getName());
+                bundleMap.put(outLocale, new IntegrationLocalization(this.integration, outLocale, prb));
             } else {
                 defaultBundle = new IntegrationLocalization(this.integration, Locale.getDefault(), prb);
             }
         }
 
         if (this.defaultBundle == null) {
-            this.integration.getLogger().log(Level.WARNING,
-                    "Integration {} does not provide a default localization.",
+            this.integration.logger().warn("Integration {} does not provide a default localization.",
                     this.integration.getName());
 
             try (InputStream emptyStream = new ByteArrayInputStream(new byte[0])) {

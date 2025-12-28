@@ -9,6 +9,8 @@ import dev.tagless.craft.closedblocks.common.integration.feature.IntegrationFeat
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public final class IntegrationStateManager {
 
@@ -59,8 +59,8 @@ public final class IntegrationStateManager {
 
                 infoCollection.add(info);
             } catch (IOException ignored) {} catch (PartialIntegrationException ex) {
-                logger.log(Level.WARNING, "Found valid closed blocks integration \"{}\", but missing a plugin. Integrations require of a plugin to work",
-                        new Object[]{ ex.getIntegration() });
+                logger.warn("Found valid closed blocks integration \"{}\", but missing a plugin. Integrations require of a plugin to work",
+                        ex.getIntegration());
             }
         }
 
@@ -71,8 +71,8 @@ public final class IntegrationStateManager {
         try {
             Class<?> clazz = Class.forName(info.integrationClass());
             if (!ClosedBlocksIntegration.class.isAssignableFrom(clazz)) {
-                this.logger.log(Level.SEVERE, "Failed to load integration {}. Provided class ({}) is not an instance of {}",
-                        new Object[]{ info.integrationName(), info.integrationClass(), ClosedBlocksIntegration.class.getName() });
+                this.logger.error("Failed to load integration {}. Provided class ({}) is not an instance of {}",
+                        info.integrationName(), info.integrationClass(), ClosedBlocksIntegration.class.getName());
                 return Optional.empty();
             }
 
@@ -88,7 +88,7 @@ public final class IntegrationStateManager {
 
             return Optional.of(integration);
         } catch (ReflectiveOperationException ex) {
-            this.logger.log(Level.SEVERE, "Failed to create integration {} ({})", new Object[]{info.integrationName(), info.integrationClass()});
+            this.logger.error("Failed to create integration {} ({})", info.integrationName(), info.integrationClass());
         }
 
         return Optional.empty();
@@ -101,37 +101,39 @@ public final class IntegrationStateManager {
             stateField.set(integration, IntegrationState.LOADED);
             stateField.setAccessible(false);
         } catch (ReflectiveOperationException ex) {
-            this.logger.log(Level.SEVERE, "Failed to update integration state to {} on {}", new Object[]{state, integration.getName()});
+            this.logger.error("Failed to update integration state to {} on {}", state, integration.getName());
         }
     }
 
     public void initIntegration(final @NotNull ClosedBlocksIntegration integration, final @NotNull Plugin plugin) {
         try {
-            Field featureManager = ClosedBlocksIntegration.class.getDeclaredField("featureManager");
-            featureManager.setAccessible(true);
-            featureManager.set(integration, new IntegrationFeatureManager(integration));
-            featureManager.setAccessible(false);
+            updateField(integration, "featureManager",
+                    new IntegrationFeatureManager(integration));
+            updateField(integration, "plugin", plugin);
 
-            Field pluginField = ClosedBlocksIntegration.class.getDeclaredField("plugin");
-            pluginField.setAccessible(true);
-            pluginField.set(integration, plugin);
-            pluginField.setAccessible(false);
+            Logger l = LoggerFactory.getLogger(plugin.getClass());
+            updateField(integration, "logger", l);
 
             LocalizationBundle bundle = IntegrationLocalizationBundle.empty(integration);
             try {
                 bundle = new IntegrationLocalizationBundle(integration);
             } catch (IOException ex) {
                 setState(integration, IntegrationState.DEGRADED);
-                this.logger.log(Level.WARNING, String.format("Failed to initialize localization for integration %s",
-                                integration.getName()), ex);
+                this.logger.atWarn().setCause(ex)
+                        .log("Failed to initialize localization for integration {}", integration.getName());
             }
 
-            Field bundleField = ClosedBlocksIntegration.class.getDeclaredField("localization");
-            bundleField.setAccessible(true);
-            bundleField.set(integration, bundle);
-            bundleField.setAccessible(false);
+            updateField(integration, "localization", bundle);
         } catch (ReflectiveOperationException ex) {
-            this.logger.log(Level.SEVERE, "Failed to initialize integration {}", new Object[]{integration.getName()});
+            this.logger.error("Failed to initialize integration {}", integration.getName());
         }
+    }
+
+    private void updateField(final ClosedBlocksIntegration integration, final String field, final Object value)
+            throws ReflectiveOperationException {
+        Field f = ClosedBlocksIntegration.class.getDeclaredField(field);
+        f.setAccessible(true);
+        f.set(integration, value);
+        f.setAccessible(false);
     }
 }

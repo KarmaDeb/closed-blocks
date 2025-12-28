@@ -6,7 +6,6 @@ import dev.tagless.craft.closedblocks.api.util.data.OptionalList;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
-import java.util.logging.Level;
 
 public record IntegrationLocalization(ClosedBlocksIntegration integration,
                                       Locale locale,
@@ -31,11 +30,9 @@ public record IntegrationLocalization(ClosedBlocksIntegration integration,
     @Override
     public @NotNull Optional<String> getString(final @NotNull String key) {
         if (!this.prb.containsKey(key)) {
-            this.integration.getLogger().log(Level.WARNING, "Missing localization key {} for locale {}",
-                    new Object[]{
-                            key,
-                            this.locale.toLanguageTag()
-                    });
+            this.integration.logger()
+                    .warn("Missing localization key {} for locale {} from {}",
+                            key, this.locale.toLanguageTag(), this.integration.getName());
 
             return Optional.empty();
         }
@@ -52,11 +49,8 @@ public record IntegrationLocalization(ClosedBlocksIntegration integration,
     @Override
     public @NotNull OptionalList<String> getStringList(final @NotNull String key) {
         if (!this.prb.containsKey(key)) {
-            this.integration.getLogger().log(Level.WARNING, "Missing localization key {} for locale {}",
-                    new Object[]{
-                            key,
-                            this.locale.toLanguageTag()
-                    });
+            this.integration.logger().warn("Missing localization key (list) {} for locale {} from {}",
+                    key, this.locale.toLanguageTag(), this.integration.getName());
 
             return OptionalList.empty();
         }

@@ -64,11 +64,17 @@ public class IntegrationFeatureManager implements FeatureManager {
             return;
         }
 
+        this.integration.logger().info("Registered feature {} from {}", feature.getSimpleName(),
+                this.integration.getName());
         this.featureMap.add(feature);
 
         if (EvolvedBlock.class.isAssignableFrom(feature)) {
             BlockRegistry registry = this.getEvolvedBlockRegistry();
             registry.register(this.integration, feature.asSubclass(EvolvedBlock.class));
+        } else if (BlockBehavior.class.isAssignableFrom(feature)) {
+            EvolvedBlockBehaviorRegistry registry = this.getEvolvedBlockBehaviorRegistry();
+            registry.getRegistries(feature.asSubclass(BlockBehavior.class))
+                    .forEach(b -> b.register(feature.asSubclass(BlockBehavior.class)));
         }
     }
 
@@ -83,6 +89,9 @@ public class IntegrationFeatureManager implements FeatureManager {
             return;
         }
 
+        this.integration.logger().info("Enabled feature {} from {}", feature.getSimpleName(),
+                this.integration.getName());
+
         this.featureMap.set(feature, true);
         if (EvolvedBlock.class.isAssignableFrom(feature)) {
             EvolvedBlockRegistry registry = this.getEvolvedBlockRegistry();
@@ -91,12 +100,6 @@ public class IntegrationFeatureManager implements FeatureManager {
             registry.enable(feature.asSubclass(EvolvedBlock.class));
             behaviorRegistry.get(feature.asSubclass(EvolvedBlock.class))
                     .ifPresent(BlockBehaviorRegistry::disable);
-        } else if (BlockBehavior.class.isAssignableFrom(feature)) {
-            Class<? extends BlockBehavior> behavior = feature.asSubclass(BlockBehavior.class);
-
-            EvolvedBlockBehaviorRegistry behaviorRegistry = this.getEvolvedBlockBehaviorRegistry();
-            behaviorRegistry.getRegistries(behavior)
-                    .forEach(registry -> registry.enable(behavior));
         }
     }
 

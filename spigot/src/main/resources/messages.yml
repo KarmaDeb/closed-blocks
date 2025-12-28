@@ -1,0 +1,30 @@
+###########################################################
+#
+#                  CLOSEDBLOCKS MESSAGES
+#
+# Plugin version: ${project.version}
+# Author: tagless
+# Compiled at: ${buildNumber}
+#
+# Java compiler:   ${java.version}
+# Compiler source: ${maven.compiler.source}
+# Compiler target: ${maven.compiler.target}
+###########################################################
+
+help: |-
+    &7Help for &eClosedBlocks &7v&f%plugin.version%
+    
+    &3/&b%label% &9help &a[command] &7-&f Shows this help message or for&a sub-command
+    &7> &6closedblocks.command.help[.command]
+    
+    &3/&b%label% &9integrations &7-&f Lists all the integrations
+    &7> &6closedblocks.command.integrations
+    
+    &3/&b%label% &9integration &a<name> <enable|disable> &7-&f Enables/disables&a integration
+    &7> &6closedblocks.command.integration[.enable|disable]
+    
+    &3/&b%label% &9run &a<name> <command> &7-&f Runs&a command&f of&a integration
+    &7> &6closedblocks.command.run
+    
+    &3/&b%label% &9reload &7-&f Reloads the plugin configuration/messages
+    &7> &6closedblocks.command.reload

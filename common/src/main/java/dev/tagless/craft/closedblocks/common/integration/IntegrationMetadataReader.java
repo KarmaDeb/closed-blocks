@@ -23,7 +23,9 @@ public class IntegrationMetadataReader {
 
     @NotNull
     public static Optional<IntegrationInfo> readInfo(final @NotNull File file) throws IOException, PartialIntegrationException {
-        try (InputStreamReader cbi = readJarFile(file, "cbi.yml"); InputStreamReader plugin = readJarFile(file, "plugin.yml")) {
+        try (JarFile jar = new JarFile(file);
+             InputStreamReader cbi = readJarFile(jar, "cbi.yml");
+             InputStreamReader plugin = readJarFile(jar, "plugin.yml")) {
             if (cbi == null || plugin == null) {
                 return Optional.empty();
             }
@@ -48,16 +50,13 @@ public class IntegrationMetadataReader {
     }
 
     @Nullable
-    private static InputStreamReader readJarFile(final @NotNull File file, final @NotNull String name) throws IOException {
-        try (JarFile jar = new JarFile(file)) {
-            JarEntry entry = jar.getJarEntry(name);
-            if (entry == null) {
-                return null;
-            }
-
-            try (InputStream stream = jar.getInputStream(entry)) {
-                return new InputStreamReader(stream, StandardCharsets.UTF_8);
-            }
+    private static InputStreamReader readJarFile(final @NotNull JarFile jar, final String name) throws IOException {
+        JarEntry entry = jar.getJarEntry(name);
+        if (entry == null) {
+            return null;
         }
+
+        InputStream stream = jar.getInputStream(entry);
+        return new InputStreamReader(stream, StandardCharsets.UTF_8);
     }
 }

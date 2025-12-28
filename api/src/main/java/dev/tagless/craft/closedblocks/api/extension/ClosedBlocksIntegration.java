@@ -16,6 +16,7 @@ import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginLoader;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +25,6 @@ import java.lang.ref.WeakReference;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * A closed block integration is NOT a requirement,
@@ -54,8 +54,10 @@ public abstract class ClosedBlocksIntegration implements Plugin {
     private Plugin plugin; //Modified through reflection
     @SuppressWarnings("unused")
     private LocalizationBundle localization; //Modified through reflection
+    @SuppressWarnings("unused")
+    private Logger logger; //Modified through reflection
 
-    private WeakReference<ResourceDirectory> resource;
+    private WeakReference<ResourceDirectory> resource = new WeakReference<>(null);
 
     /**
      * Get the integration name.
@@ -342,6 +344,11 @@ public abstract class ClosedBlocksIntegration implements Plugin {
         return this.plugin.getDefaultBiomeProvider(worldName, id);
     }
 
+    @Override
+    public final @NotNull java.util.logging.Logger getLogger() {
+        return this.plugin.getLogger();
+    }
+
     /**
      * Returns the plugin logger associated with this server's logger. The
      * returned logger automatically tags all log messages with the plugin's
@@ -349,9 +356,8 @@ public abstract class ClosedBlocksIntegration implements Plugin {
      *
      * @return Logger associated with this plugin
      */
-    @Override
-    public final @NotNull Logger getLogger() {
-        return this.plugin.getLogger();
+    public final @NotNull Logger logger() {
+        return this.logger;
     }
 
     /**

@@ -30,7 +30,7 @@ public class ClosedBlocksSpigotAPI extends ClosedBlocksAPI {
         super();
         this.plugin = plugin;
 
-        this.stateManager = new IntegrationStateManager(this.plugin.getLogger());
+        this.stateManager = new IntegrationStateManager(this.plugin.getLog());
         this.integrationManager = new IntegrationManager(this.stateManager);
     }
 

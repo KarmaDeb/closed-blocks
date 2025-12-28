@@ -1,8 +1,11 @@
 package dev.tagless.craft.closedblocks.spigot;
 
+import lombok.extern.slf4j.Slf4j;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.slf4j.Logger;
 
+@Slf4j
 public class ClosedBlocksSpigotPlugin extends JavaPlugin {
 
     private final ClosedBlocksSpigotAPI api = new ClosedBlocksSpigotAPI(this);
@@ -19,8 +22,7 @@ public class ClosedBlocksSpigotPlugin extends JavaPlugin {
         });
     }
 
-    @Override
-    public void onDisable() {
-
+    public Logger getLog() {
+        return log;
     }
 }

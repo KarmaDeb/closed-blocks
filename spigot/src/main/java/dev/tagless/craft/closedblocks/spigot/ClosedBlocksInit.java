@@ -20,7 +20,6 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.function.Supplier;
-import java.util.logging.Level;
 
 public class ClosedBlocksInit {
 
@@ -59,8 +58,7 @@ public class ClosedBlocksInit {
             svcName = String.valueOf(serviceName.get(service));
         } catch (ReflectiveOperationException ignored) {}
 
-        this.api.getPlugin().getLogger().log(
-                Level.INFO,
+        this.api.getPlugin().getLog().info(
                 "Registering {} as a Bukkit service",
                 svcName
         );
@@ -73,13 +71,12 @@ public class ClosedBlocksInit {
         for (IntegrationInfo info : integrationInfos) {
             Plugin matchingPlugin = Bukkit.getPluginManager().getPlugin(info.plugin().getName());
             if (matchingPlugin == null) {
-                this.api.getPlugin().getLogger().log(Level.WARNING,
+                this.api.getPlugin().getLog().warn(
                         "Not loading integration {} because its plugin ({}) has not been loaded",
-                        new Object[]{info.integrationName(), info.plugin().getName()});
+                        info.integrationName(), info.plugin().getName());
                 continue;
             }
-            this.api.getPlugin().getLogger().log(Level.INFO, "Loading integration {}",
-                    new Object[]{info.integrationName()});
+            this.api.getPlugin().getLog().info("Loading integration {}", info.integrationName());
 
             this.api.getStateManager().createIntegration(info).ifPresent(integration -> {
                 this.api.getStateManager().initIntegration(integration, matchingPlugin);
