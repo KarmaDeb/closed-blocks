@@ -1,4 +1,4 @@
-package dev.tagless.craft.closedblocks.spigot;
+package dev.tagless.craft.closedblocks.spigot.elevator;
 
 import org.bukkit.plugin.java.JavaPlugin;
 

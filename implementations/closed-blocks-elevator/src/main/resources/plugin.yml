@@ -1,5 +1,5 @@
 name: 'ClosedBlocksElevators'
-main: 'dev.tagless.craft.closedblocks.spigot.ClosedBlocksElevatorPlugin'
+main: 'dev.tagless.craft.closedblocks.spigot.elevator.ClosedBlocksElevatorPlugin'
 version: '${full.version}'
 author: 'tagless'
 

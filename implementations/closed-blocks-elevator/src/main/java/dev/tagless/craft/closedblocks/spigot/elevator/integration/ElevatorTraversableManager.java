@@ -1,4 +1,4 @@
-package dev.tagless.craft.closedblocks.spigot.integration.elevator;
+package dev.tagless.craft.closedblocks.spigot.elevator.integration;
 
 import dev.tagless.craft.closedblocks.api.block.Traversable;
 import org.bukkit.World;

@@ -25,5 +25,11 @@
             <artifactId>closed-blocks-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+            <groupId>dev.tagless</groupId>
+            <artifactId>closed-blocks-common</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

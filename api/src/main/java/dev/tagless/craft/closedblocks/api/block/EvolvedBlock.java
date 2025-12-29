@@ -22,6 +22,7 @@ import java.util.Optional;
  * The evolved block interface provides the façade for
  * any other evolved block the plugin provides.
  */
+@SuppressWarnings("unused")
 public interface EvolvedBlock extends ClosedBlocksFeature {
 
     /**
@@ -147,8 +148,9 @@ public interface EvolvedBlock extends ClosedBlocksFeature {
     /**
      * Removes the block. Unlike the {@link #destroy(Player, ItemStack) destroy} method,
      * this method DOES NOT trigger any event, and does not perform any validation.
+     * @param dropItem if the block drops himself
      */
-    void remove();
+    void remove(final boolean dropItem);
 
     /**
      * Get if the player can destroy the block
@@ -172,7 +174,7 @@ public interface EvolvedBlock extends ClosedBlocksFeature {
     boolean canDestroy(final @NotNull Player player, final @NotNull NamespacedKey material);
 
     /**
-     * Destroys the block. Unlike the {@link #remove() remove} method,
+     * Destroys the block. Unlike the {@link #remove(boolean) remove} method,
      * this method DOES trigger an event, and performs pre-validations before
      * breaking the block
      * @param player the player trying to destroy the block

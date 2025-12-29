@@ -1,24 +1,21 @@
-package dev.tagless.craft.closedblocks.spigot.integration.elevator;
+package dev.tagless.craft.closedblocks.spigot.elevator.integration;
 
 import dev.tagless.craft.closedblocks.api.ClosedBlocksAPI;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
 import dev.tagless.craft.closedblocks.api.block.Traversable;
 import dev.tagless.craft.closedblocks.api.block.evolution.Elevator;
+import dev.tagless.craft.closedblocks.api.block.evolution.Navigable;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.ProxiedBlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.material.MaterialLookupService;
 import dev.tagless.craft.closedblocks.api.material.MaterialProxy;
-import org.bukkit.Bukkit;
-import org.bukkit.NamespacedKey;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.World;
+import dev.tagless.craft.closedblocks.common.nbt.PersistentStore;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataContainer;
-import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -31,7 +28,7 @@ import java.util.UUID;
 
 public class BlockElevator implements Elevator {
 
-    private final OfflinePlayer player;
+    private final UUID player;
     private final Traversable<BlockElevator> traversable;
 
     private final UUID world;
@@ -39,19 +36,18 @@ public class BlockElevator implements Elevator {
     private final int y;
     private final int z;
 
-    private String name;
     private NamespacedKey material;
 
-    public BlockElevator(final @NotNull Player player, final @NotNull Block block) {
-        this.player = Bukkit.getOfflinePlayer(player.getUniqueId());
+    public BlockElevator(final @NotNull UUID owner, final @NotNull Block block) {
+        this.player = owner;
+
+        this.traversable = ElevatorTraversableManager.get(block.getWorld(), block.getX(), block.getZ());
+        /*this.traversable.add(this);*/
 
         this.world = block.getWorld().getUID();
         this.x = block.getX();
         this.y = block.getY();
         this.z = block.getZ();
-
-        this.traversable = ElevatorTraversableManager.get(block.getWorld(), block.getX(), block.getZ());
-        this.traversable.add(this);
     }
 
     /**
@@ -65,7 +61,10 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public @NotNull String getFloorName() {
-        return this.name;
+        return this.getBlock().flatMap(block -> {
+            PersistentStore store = PersistentStore.detect(block);
+            return store.getString("name");
+        }).orElse("");
     }
 
     /**
@@ -75,12 +74,37 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public void setFloorName(final @NotNull String value) {
-        this.name = value;
+        this.getBlock().ifPresent(block -> {
+            PersistentStore store = PersistentStore.detect(block);
+            store.setString("name", value);
+        });
+    }
+
+    /**
+     * Get the minimum index of the navigation sequence. Usually
+     * zero, but there's no restriction on it.
+     *
+     * @return the minimum index
+     */
+    @Override
+    public int getMin() {
+        return this.traversable.first().map(BlockElevator::getCurrent)
+                .orElse(this.getCurrent());
+    }
+
+    /**
+     * Get the current index of the navigation sequence.
+     *
+     * @return the current index
+     */
+    @Override
+    public int getCurrent() {
+        return this.traversable.index(this);
     }
 
     /**
      * Get the current floor level. Usually matches
-     * {@link dev.tagless.craft.closedblocks.api.block.evolution.Navigable#getCurrent()}, but this is not
+     * {@link Navigable#getCurrent()}, but this is not
      * a requirement for Elevators.
      *
      * @return the floor level of the
@@ -102,27 +126,18 @@ public class BlockElevator implements Elevator {
     @Override
     public void setDisplayFloor(final int index) {
         this.traversable.setDisplayIndex(this, index);
-    }
 
-    /**
-     * Get the minimum index of the navigation sequence. Usually
-     * zero, but there's no restriction on it.
-     *
-     * @return the minimum index
-     */
-    @Override
-    public int getMin() {
-        return 0;
-    }
+        for (BlockElevator elevator : this.traversable) {
+            elevator.getBlock().ifPresent(block -> {
+                PersistentStore store = PersistentStore.detect(block);
+                store.unsetInt("display_floor");
+            });
+        }
 
-    /**
-     * Get the current index of the navigation sequence.
-     *
-     * @return the current index
-     */
-    @Override
-    public int getCurrent() {
-        return this.traversable.index(this);
+        this.getBlock().ifPresent(block -> {
+            PersistentStore store = PersistentStore.detect(this);
+            store.setInt("display_floor", index);
+        });
     }
 
     /**
@@ -134,7 +149,8 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public int getMax() {
-        return this.traversable.getSize() - 1;
+        return this.traversable.last().map(BlockElevator::getCurrent)
+                .orElse(this.getCurrent());
     }
 
     /**
@@ -167,7 +183,7 @@ public class BlockElevator implements Elevator {
      * specified steps
      */
     @Override
-    public @NotNull Optional<BlockElevator> step(final int number) {
+    public @NotNull Optional<? extends Elevator> step(final int number) {
         return this.traversable.step(this, number);
     }
 
@@ -180,9 +196,8 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public @NotNull Optional<World> getWorld() {
-        return Optional.ofNullable(
-                Bukkit.getWorld(this.world)
-        );
+        World w = Bukkit.getWorld(this.world);
+        return Optional.ofNullable(w);
     }
 
     /**
@@ -192,7 +207,7 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public @NotNull OfflinePlayer getOwner() {
-        return this.player;
+        return Bukkit.getOfflinePlayer(this.player);
     }
 
     /**
@@ -217,12 +232,25 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public void setMaterial(final @NotNull NamespacedKey material) {
-        MaterialLookupService service = MaterialLookupService.getInstance();
-        service.getMaterial(material).ifPresent(proxy -> {
-            if (proxy.isBlock() && proxy.isSolid()) {
-                this.material = material;
-            }
-        });
+        Block block = this.getBlock().orElse(null);
+        if (block == null) {
+            return;
+        }
+
+        MaterialProxy proxy = MaterialLookupService.getInstance().getMaterial(material).orElse(null);
+        if (proxy == null || !proxy.isBlock() || !proxy.isSolid() || proxy.isInteractable()) {
+            return;
+        }
+
+        PersistentStore store = PersistentStore.detect(block);
+        if (store.getString("type").isEmpty()) {
+            this.material = material;
+            return;
+        }
+
+        if (proxy.generateBlock(block.getWorld(), this.x, this.y, this.z).isPresent()) {
+            this.material = material;
+        }
     }
 
     /**
@@ -299,10 +327,21 @@ public class BlockElevator implements Elevator {
     /**
      * Removes the block. Unlike the {@link #destroy(Player, ItemStack) destroy} method,
      * this method DOES NOT trigger any event, and does not perform any validation.
+     * @param dropItem if the block drops himself
      */
     @Override
-    public void remove() {
+    public void remove(final boolean dropItem) {
+        this.getBlock().ifPresent(block -> {
+            PersistentStore store = PersistentStore.detect(this);
+            store.clear();
 
+            PersistentStore worldStore = PersistentStore.detect(block.getWorld());
+            worldStore.removeStringList("elevators", String.format("%d_%d_%d",
+                    this.x, this.y, this.z));
+
+            block.setType(Material.AIR);
+            this.traversable.remove(this);
+        });
     }
 
     /**
@@ -316,7 +355,7 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean canDestroy(final @NotNull Player player, final @Nullable ItemStack tool) {
-        return true;
+        return this.canDestroy(player, tool != null ? tool.getType().getKeyOrThrow() : Material.AIR.getKeyOrThrow());
     }
 
     /**
@@ -331,11 +370,11 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean canDestroy(final @NotNull Player player, final @NotNull NamespacedKey material) {
-        return true;
+        return player.getUniqueId().equals(this.player);
     }
 
     /**
-     * Destroys the block. Unlike the {@link #remove() remove} method,
+     * Destroys the block. Unlike the {@link #remove(boolean) remove} method,
      * this method DOES trigger an event, and performs pre-validations before
      * breaking the block
      *
@@ -346,7 +385,14 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean destroy(final @Nullable Player player, final @Nullable ItemStack item) {
-        return false;
+        if (player != null && !this.canDestroy(player, item)) {
+            return false;
+        }
+
+        return this.getBlock().map(block -> {
+            this.remove(true);
+            return true;
+        }).orElse(false);
     }
 
     /**
@@ -361,30 +407,40 @@ public class BlockElevator implements Elevator {
      */
     @Override
     public boolean place(final @NotNull Player player, final @NotNull Block block) {
-        if (!block.getWorld().getUID().equals(this.world) ||
-                block.getX() != this.x ||
-                block.getY() != this.y ||
-                block.getZ() != this.z ||
-                !player.getUniqueId().equals(this.player.getUniqueId())) {
+        if (!player.getUniqueId().equals(this.player)) {
             return false;
         }
 
-        MaterialLookupService service = MaterialLookupService.getInstance();
-
-        Optional<MaterialProxy> materialProxy = service.getMaterial(this.material);
-        if (materialProxy.isEmpty()) {
-            return false;
+        PersistentStore store = PersistentStore.detect(block);
+        if (store.getString("type").isPresent()) {
+            return true;
         }
 
-        MaterialProxy material = materialProxy.get();
-        return material.generateBlock(block.getWorld(), block.getX(), block.getY(), block.getZ()).map(placed -> {
-            PersistentDataContainer container = placed.getChunk().getPersistentDataContainer();
-            container.set(this.generateKey("owner"), PersistentDataType.STRING, this.player.getUniqueId().toString());
-            container.set(this.generateKey("disguise"), PersistentDataType.STRING, this.material.toString());
-            // This data is needed later for re-construction of elevator instance
+        boolean generated = this.getWorld().flatMap(world -> MaterialLookupService.getInstance()
+                .getMaterial(this.material).flatMap(proxy -> {
+            if (proxy.isBlock() && proxy.isSolid() && !proxy.isInteractable()) {
+                store.clear();
+
+                return proxy.generateBlock(world, this.x, this.y, this.z);
+            }
+
+            return Optional.empty();
+        })).map(placed -> {
+            store.setString("type", "elevator");
+            store.setUUID("owner", player.getUniqueId());
+
+            PersistentStore worldStore = PersistentStore.detect(block.getWorld());
+            worldStore.addStringList("elevators", String.format("%d_%d_%d",
+                    this.x, this.y, this.z));
 
             return true;
         }).orElse(false);
+        if (!generated) {
+            return false;
+        }
+
+        this.traversable.add(this);
+        return true;
     }
 
     private EvolvedBlockBehaviorRegistry getBehaviorRegistry() {
@@ -459,10 +515,11 @@ public class BlockElevator implements Elevator {
             return false;
         }
 
+        UUID elevatorWorldUUID = elevator.getWorld().map(World::getUID).orElse(null);
         return this.x == elevator.getX() &&
                 this.y == elevator.getY() &&
                 this.z == elevator.getZ() &&
-                this.world.equals(elevator.getWorld().map(World::getUID).orElse(null));
+                this.world.equals(elevatorWorldUUID);
     }
 
     /**
@@ -501,13 +558,5 @@ public class BlockElevator implements Elevator {
     @Override
     public int hashCode() {
         return Objects.hash(this.world, this.x, this.y, this.z);
-    }
-
-    private NamespacedKey generateKey(final String key) {
-        return NamespacedKey.fromString(String.format("cbe:elevator_%d_%d_%d_%s",
-                this.x,
-                this.y,
-                this.z,
-                key));
     }
 }

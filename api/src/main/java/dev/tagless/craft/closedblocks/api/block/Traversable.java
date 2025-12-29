@@ -14,12 +14,10 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @param <T> the traversable block type
  */
 @ThreadSafe
-public final class Traversable<T extends EvolvedBlock> {
+public final class Traversable<T extends EvolvedBlock> implements Iterable<T> {
 
     private final NavigableSet<T> path;
-
     private final Map<T, Integer> indexes = new ConcurrentHashMap<>();
-
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
     private int displayOffset = 0;
@@ -30,6 +28,30 @@ public final class Traversable<T extends EvolvedBlock> {
      */
     public Traversable(final @NotNull Comparator<T> comparator) {
         this.path = new ConcurrentSkipListSet<>(comparator);
+    }
+
+    /**
+     * Get the first element
+     * @return the first element
+     */
+    public Optional<T> first() {
+        try {
+            return Optional.of(this.path.first());
+        } catch (NoSuchElementException ignored) {}
+
+        return Optional.empty();
+    }
+
+    /**
+     * Get the last element
+     * @return the last element
+     */
+    public Optional<T> last() {
+        try {
+            return Optional.of(this.path.last());
+        } catch (NoSuchElementException ignored) {}
+
+        return Optional.empty();
     }
 
     /**
@@ -176,6 +198,7 @@ public final class Traversable<T extends EvolvedBlock> {
         indexes.replaceAll((ignored, idx) -> idx >= start ? idx + delta : idx);
     }
 
+    @SuppressWarnings("unused")
     public int getSize() {
         lock.readLock().lock();
         try {
@@ -183,5 +206,16 @@ public final class Traversable<T extends EvolvedBlock> {
         } finally {
             lock.readLock().unlock();
         }
+    }
+
+    /**
+     * Returns an iterator over elements of type {@code T}.
+     *
+     * @return an Iterator.
+     */
+    @Override
+    public @NotNull Iterator<T> iterator() {
+        return Collections.unmodifiableCollection(this.path)
+                .iterator();
     }
 }

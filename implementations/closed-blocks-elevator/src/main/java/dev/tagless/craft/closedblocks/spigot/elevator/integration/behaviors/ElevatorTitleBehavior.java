@@ -1,7 +1,7 @@
-package dev.tagless.craft.closedblocks.spigot.integration.elevator.behaviors;
+package dev.tagless.craft.closedblocks.spigot.elevator.integration.behaviors;
 
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.title.BlockTitleBehavior;
-import dev.tagless.craft.closedblocks.spigot.integration.elevator.BlockElevator;
+import dev.tagless.craft.closedblocks.spigot.elevator.integration.BlockElevator;
 import org.jetbrains.annotations.NotNull;
 
 import static dev.tagless.craft.closedblocks.api.extension.feature.ClosedBlocksFeature.IntendedFor;
