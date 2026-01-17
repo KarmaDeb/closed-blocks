@@ -1,5 +1,6 @@
 package dev.tagless.craft.closedblocks.api;
 
+import dev.tagless.craft.closedblocks.api.engine.ScriptEngine;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegrationManager;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +39,13 @@ public abstract class ClosedBlocksAPI {
      */
     @NotNull
     public abstract <T extends ClosedBlockRegistry> Optional<T> getRegistry(final Class<T> type);
+
+    /**
+     * Get the plugin scripting engine
+     * @return the plugin scripting engine
+     */
+    @NotNull
+    public abstract ScriptEngine getScriptingEngine();
 
     /**
      * Get the ClosedBlocks API instance
