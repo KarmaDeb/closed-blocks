@@ -185,6 +185,16 @@ public final class Javatype implements Predicate<String> {
     }
 
     /**
+     * Create a javatype for a package
+     * @param of the class to use package from
+     * @return the javatype
+     */
+    @NotNull @Contract("null -> fail")
+    public static Javatype pack(final Class<?> of) {
+        return pack(Objects.requireNonNull(of, "class cannot be null").getPackage());
+    }
+
+    /**
      * Create a javatype which is a "wildcard" for
      * objects which are instanceof the provided
      * type
