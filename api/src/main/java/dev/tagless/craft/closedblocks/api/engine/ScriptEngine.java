@@ -3,6 +3,12 @@ package dev.tagless.craft.closedblocks.api.engine;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -88,12 +94,11 @@ public abstract class ScriptEngine {
      */
     @Contract("null, null -> fail")
     public final void execute(final Path file, final Consumer<Map<String, Object>> bindMapper) {
-        Collection<Javatype> allowedTypes = new HashSet<>(this.allowedTypes);
-        Map<String, Object> binds = this.mapBindings(
-                Objects.requireNonNull(bindMapper, "bindMapper cannot be null"), allowedTypes);
-        binds.putAll(this.bindings);
-
-        this.executeScript(Objects.requireNonNull(file, "file cannot be null"), allowedTypes, binds);
+        try (InputStream stream = Files.newInputStream(file)) {
+            this.execute(stream, bindMapper);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**
@@ -127,12 +132,110 @@ public abstract class ScriptEngine {
     }
 
     /**
+     * Executes a script file on the current thread
+     * @param stream the script stream to run
+     * @param bindMapper the "context" bindings, similar to {@link #bind(String, Object)} but
+     *                   whose bindings will exist only for this script execution
+     */
+    @Contract("null, null -> fail")
+    public final void execute(final InputStream stream, final Consumer<Map<String, Object>> bindMapper) {
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            StringBuilder scriptBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                scriptBuilder.append(line)
+                        .append("\n");
+            }
+
+            this.execute(scriptBuilder, bindMapper);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    /**
+     * Executes a script stream without blocking the main thread
+     * @param stream the script stream to run
+     * @param bindMapper the "context" bindings, similar to {@link #bind(String, Object)} but
+     *                   whose bindings will exist only for this script execution
+     */
+    @NotNull @Contract("null, null -> fail")
+    public final CompletableFuture<Void> executeAsync(final InputStream stream,
+                                                final Consumer<Map<String, Object>> bindMapper) {
+        return CompletableFuture.runAsync(() -> this.execute(stream, bindMapper), EXECUTOR);
+    }
+
+    /**
+     * Executes a script stream on the main thread
+     * @param stream the script stream to run
+     */
+    @Contract("null -> fail")
+    public final void execute(final InputStream stream) {
+        this.execute(stream, ignored -> {});
+    }
+
+    /**
+     * Executes a script stream without blocking the main thread
+     * @param stream the script stream to run
+     */
+    @NotNull @Contract("null -> fail")
+    public final CompletableFuture<Void> executeAsync(final InputStream stream) {
+        return this.executeAsync(stream, ignored -> {});
+    }
+
+    /**
+     * Executes a script on the current thread
+     * @param script the script to run
+     * @param bindMapper the "context" bindings, similar to {@link #bind(String, Object)} but
+     *                   whose bindings will exist only for this script execution
+     */
+    @Contract("null, null -> fail")
+    public final void execute(final CharSequence script, final Consumer<Map<String, Object>> bindMapper) {
+        Collection<Javatype> allowedTypes = new HashSet<>(this.allowedTypes);
+        Map<String, Object> binds = this.mapBindings(
+                Objects.requireNonNull(bindMapper, "bindMapper cannot be null"), allowedTypes);
+        binds.putAll(this.bindings);
+
+        this.executeScript(Objects.requireNonNull(script, "script cannot be null"), allowedTypes, binds);
+    }
+
+    /**
+     * Executes a script without blocking the main thread
+     * @param script the script to run
+     * @param bindMapper the "context" bindings, similar to {@link #bind(String, Object)} but
+     *                   whose bindings will exist only for this script execution
+     */
+    @NotNull @Contract("null, null -> fail")
+    public final CompletableFuture<Void> executeAsync(final CharSequence script,
+                                                final Consumer<Map<String, Object>> bindMapper) {
+        return CompletableFuture.runAsync(() -> this.execute(script, bindMapper), EXECUTOR);
+    }
+
+    /**
+     * Executes a script on the main thread
+     * @param script the script to run
+     */
+    @Contract("null -> fail")
+    public final void execute(final CharSequence script) {
+        this.execute(script, ignored -> {});
+    }
+
+    /**
+     * Executes a script without blocking the main thread
+     * @param script the script to run
+     */
+    @NotNull @Contract("null -> fail")
+    public final CompletableFuture<Void> executeAsync(final CharSequence script) {
+        return this.executeAsync(script, ignored -> {});
+    }
+
+    /**
      * Executes the script
-     * @param file the script file
+     * @param script the script
      * @param javatypes the javatypes
      * @param mappedBindings the mapped bindings
      */
-    protected abstract void executeScript(final @NotNull Path file,
+    protected abstract void executeScript(final @NotNull CharSequence script,
                                  final @NotNull Collection<Javatype> javatypes,
                                  final @NotNull Map<String, Object> mappedBindings);
 
