@@ -37,7 +37,7 @@ public final class ReflectionUtils {
         return config.lookup(label, paramTypes);
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtype"})
     public <T> ReflectedConstructors<T> findConstructors(final String label,
                                                          final Class<T> clazz,
                                                          final ReflectedParameter... paramTypes) {
@@ -59,7 +59,12 @@ public final class ReflectionUtils {
         }
 
         result.sort(Comparator.comparingInt(ReflectedConstructor::length));
-        return new ReflectedConstructors<>(label, result.toArray(new ReflectedConstructor<?>[0]));
+        ReflectedConstructor<T>[] a = (ReflectedConstructor<T>[]) new ReflectedConstructor[result.size()];
+        for (int i = 0; i < result.size(); i++) {
+            a[i] = result.get(i);
+        }
+
+        return new ReflectedConstructors<>(label, a);
     }
 
     private List<List<Class<?>>> generateCombinationsForGroup(final ReflectedParameter[] params, final boolean isEitherGroup) {
