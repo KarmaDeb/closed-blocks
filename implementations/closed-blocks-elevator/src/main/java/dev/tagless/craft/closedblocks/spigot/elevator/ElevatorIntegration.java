@@ -76,7 +76,7 @@ public final class ElevatorIntegration extends ClosedBlocksIntegration {
             int z = Integer.parseInt(data[2]);
 
             Block block = world.getBlockAt(x, y, z);
-            getElevator(block); //This triggers loading...
+            getElevator(block);
         });
     }
 }

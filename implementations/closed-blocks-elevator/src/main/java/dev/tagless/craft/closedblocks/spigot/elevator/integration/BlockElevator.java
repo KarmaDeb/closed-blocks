@@ -9,8 +9,13 @@ import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.BlockBehavio
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.ProxiedBlockBehavior;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.BlockBehaviorRegistry;
 import dev.tagless.craft.closedblocks.api.block.evolution.behaviour.registry.EvolvedBlockBehaviorRegistry;
+import dev.tagless.craft.closedblocks.api.bundle.Configuration;
+import dev.tagless.craft.closedblocks.api.bundle.locale.Localization;
 import dev.tagless.craft.closedblocks.api.material.MaterialLookupService;
 import dev.tagless.craft.closedblocks.api.material.MaterialProxy;
+import dev.tagless.craft.closedblocks.api.util.Utils;
+import dev.tagless.craft.closedblocks.api.util.reflection.reflected.ReflectedParameter;
+import dev.tagless.craft.closedblocks.api.util.reflection.reflected.constructor.ReflectedConstructors;
 import dev.tagless.craft.closedblocks.common.nbt.PersistentStore;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -20,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
-import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
@@ -300,13 +304,19 @@ public class BlockElevator implements Elevator {
         return behaviors.getAll().stream()
                 .filter(behaviorType::isAssignableFrom)
                 .findFirst()
-                .map(type -> {
-                    try {
-                        Constructor<? extends BlockBehavior> constructor = type.getConstructor(EvolvedBlock.class);
-                        return behaviorType.cast(constructor.newInstance(this));
-                    } catch (ReflectiveOperationException ex) {
-                        throw new IllegalStateException(ex);
-                    }
+                .flatMap(type -> {
+                    ReflectedConstructors<? extends BlockBehavior> constructors = Utils.reflection()
+                            .findConstructors("block_behavior",
+                                    type,
+                                    ReflectedParameter.group(
+                                            ReflectedParameter.required(EvolvedBlock.class),
+                                            ReflectedParameter.optional(Configuration.class),
+                                            ReflectedParameter.optional(Localization.class)
+                                    )
+                            );
+
+                    return constructors.invoke(this)
+                            .map(behaviorType::cast);
                 });
     }
 

@@ -3,10 +3,10 @@ package dev.tagless.craft.closedblocks.common.block;
 import dev.tagless.craft.closedblocks.api.ClosedBlocksAPI;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlock;
 import dev.tagless.craft.closedblocks.api.block.EvolvedBlockRegistry;
-import dev.tagless.craft.closedblocks.api.block.exception.BlockCreationException;
 import dev.tagless.craft.closedblocks.api.util.Utils;
 import dev.tagless.craft.closedblocks.api.util.data.ToggleableReference;
-import dev.tagless.craft.closedblocks.api.util.reflection.ReflectedConstructor;
+import dev.tagless.craft.closedblocks.api.util.reflection.reflected.ReflectedParameter;
+import dev.tagless.craft.closedblocks.api.util.reflection.reflected.constructor.ReflectedConstructors;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
@@ -22,6 +22,28 @@ import java.nio.file.Path;
 import java.util.*;
 
 public class BlockRegistry implements EvolvedBlockRegistry {
+
+    private static final ReflectedParameter[] BLOCK_PLACE_CONSTRUCTOR_RULES = {
+            ReflectedParameter.group(
+                    ReflectedParameter.required(Player.class),
+                    ReflectedParameter.required(Block.class)
+            ),
+            ReflectedParameter.group(
+                    ReflectedParameter.required(Player.class),
+                    ReflectedParameter.group(
+                            ReflectedParameter.optional(UUID.class),
+                            ReflectedParameter.optional(World.class)
+                    ),
+                    ReflectedParameter.required(int.class),
+                    ReflectedParameter.required(int.class),
+                    ReflectedParameter.required(int.class)
+            ),
+            ReflectedParameter.group(
+                    ReflectedParameter.required(Player.class),
+                    ReflectedParameter.required(Location.class)
+            ),
+            ReflectedParameter.group()
+    };
 
     private final ToggleableReference<NamespacedKey, Class<? extends EvolvedBlock>> blockMap = new ToggleableReference<>();
 
@@ -120,37 +142,25 @@ public class BlockRegistry implements EvolvedBlockRegistry {
      * @param player the player who is placing the block
      * @param block  the block to place
      * @return the placed block
-     * @throws BlockCreationException if there's a problem while creating the
-     * block
      */
     @Override
-    public @NotNull <T extends EvolvedBlock> Optional<T> place(final @NotNull Class<T> type, final @NotNull Player player, final @NotNull Block block) throws BlockCreationException {
+    public @NotNull <T extends EvolvedBlock> Optional<T> place(final @NotNull Class<T> type,
+                                                               final @NotNull Player player,
+                                                               final @NotNull Block block) {
         if (!this.blockMap.hasValue(type)) {
             return Optional.empty();
         }
 
-        ReflectedConstructor<T> constructor =
-                Utils.reflection()
-                        .findConstructor("player_world", type, Player.class, Block.class)
-                        .or(() -> Utils.reflection()
-                                .findConstructor("player_unpacked_block", type, Player.class, World.class, int.class, int.class, int.class))
-                        .or(() -> Utils.reflection()
-                                .findConstructor("player_raw_unpacked_block", type, Player.class, UUID.class, int.class, int.class, int.class))
-                        .or(() -> Utils.reflection()
-                                .findConstructor("player_location", type, Player.class, Location.class))
-                        .or(() -> Utils.reflection().findConstructor("empty", type))
-                        .orElseThrow(() -> new BlockCreationException(player, block, type));
+        ReflectedConstructors<T> constructors = Utils.reflection()
+                .findConstructors("player_location", type, BLOCK_PLACE_CONSTRUCTOR_RULES);
 
-        return switch (constructor.getLabel()) {
-            case "player_world" -> constructor.invoke(player, block);
-            case "player_unpacked_block" ->
-                    constructor.invoke(player, block.getWorld(), block.getX(), block.getY(), block.getZ());
-            case "player_raw_unpacked_block" ->
-                    constructor.invoke(player, block.getWorld().getUID(), block.getX(), block.getY(), block.getZ());
-            case "player_location" -> constructor.invoke(player, block.getLocation());
-            case "empty" -> constructor.invoke();
-            default -> throw new BlockCreationException(player, block, type);
-        };
+        return constructors.invokes(
+                new Object[]{ player, block },
+                new Object[]{ player, block.getWorld(), block.getX(), block.getY(), block.getZ() },
+                new Object[]{ player, block.getWorld().getUID(), block.getX(), block.getY(), block.getZ() },
+                new Object[]{ player, block.getLocation() },
+                new Object[]{}
+        );
     }
 
 

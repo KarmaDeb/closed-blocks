@@ -1,4 +1,4 @@
-package dev.tagless.craft.closedblocks.api.util.reflection;
+package dev.tagless.craft.closedblocks.api.util.reflection.reflected.constructor;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -8,6 +8,7 @@ import java.util.Optional;
 /**
  * A reflected constructor
  */
+@SuppressWarnings("unused")
 public final class ReflectedConstructor<T> {
 
     private final String label;
@@ -28,9 +29,17 @@ public final class ReflectedConstructor<T> {
      * @return the reflected constructor
      * label
      */
-    @NotNull
+    @NotNull @Deprecated(forRemoval = true)
     public String getLabel() {
         return this.label;
+    }
+
+    /**
+     * Get the constructor length
+     * @return the amount of parameters
+     */
+    public int length() {
+        return this.constructor.getParameterCount();
     }
 
     /**
