@@ -43,7 +43,7 @@ public interface ResourceItem {
      * exported to a file named as {@link #getName()} in that directory, following
      * then the same logic as if destination was a file.
      * @param destination the directory/file to export to
-     * @param strategies the write strategies
+     * @param strategies the writing strategies
      * @return a collection of created files
      * @throws IOException if the export fails
      */
@@ -69,7 +69,7 @@ public interface ResourceItem {
         /**
          * Remove the file and re-create (similar to replace, but
          * ensure the file gets removed first, removing any kind of
-         * meta-data)
+         * metadata)
          */
         REMOVE
     }

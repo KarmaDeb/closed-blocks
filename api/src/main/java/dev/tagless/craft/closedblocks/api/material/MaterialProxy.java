@@ -1,5 +1,6 @@
 package dev.tagless.craft.closedblocks.api.material;
 
+import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
@@ -14,6 +15,7 @@ import java.util.Optional;
  * the material. For vanilla materials, the proxy
  * is always the ClosedBlocks plugin.
  */
+@SuppressWarnings("unused")
 public interface MaterialProxy {
 
     /**
@@ -22,6 +24,14 @@ public interface MaterialProxy {
      */
     @NotNull
     Plugin getProvider();
+
+    /**
+     * Get the proxy as a material. Please note this
+     * might not return the custom material, causing the proxied
+     * methods to not return the same as the proxy
+     * @return the proxy element as a material
+     */
+    Material asMaterial();
 
     /**
      * Get if a material is a block

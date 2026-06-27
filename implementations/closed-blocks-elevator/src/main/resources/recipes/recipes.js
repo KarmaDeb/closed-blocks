@@ -2,23 +2,26 @@
 
 "use strict";
 
-const Material = Java.type('org.bukkit.Material');
 const Registry = Java.type('org.bukkit.Registry');
 
 const RecipeRegistry = Java.type('dev.tagless.craft.closedblocks.engine.RecipeBuilder');
 const ElevatorUtils = Java.type('dev.tagless.craft.closedblocks.spigot.elevator.integration.ElevatorUtils');
 
-for (const material of Material.values()) {
-	if (!material.isBlock() || !material.isSolid()) {
-		continue;
+
+const usableBlocks = Registry.MATERIAL.stream().filter(material => {
+	if (!material.isBlock() && !material.isSolid()) {
+		return false;
 	}
 
 	const key = material.getKeyOrNull();
 	/** @type {string} */ const name = key.getKey();
 
-	if (!name.endsWith('_wool') || !name.endsWith('_concrete')) {
-		continue;
-	}
+	return name.endsWith('_wool') || name.endsWith('_concrete');
+}).toList();
+
+for (const material of usableBlocks) {
+	const key = material.getKeyOrNull();
+	/** @type {string} */ const name = key.getKey();
 
 	const raw = key.toString();
 	const ite = 'minecraft:ender_pearl';
@@ -29,7 +32,5 @@ for (const material of Material.values()) {
 		[raw, raw, raw]
 	];
 
-	RecipeRegistry.register(shape, () => {
-		return ElevatorUtils.create(material);
-	});
+	RecipeRegistry.register(`elevator_${name}`, shape, ElevatorUtils.create(material));
 }

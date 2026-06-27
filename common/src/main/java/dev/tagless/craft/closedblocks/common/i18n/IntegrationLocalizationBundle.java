@@ -4,6 +4,7 @@ import dev.tagless.craft.closedblocks.api.bundle.locale.Localization;
 import dev.tagless.craft.closedblocks.api.bundle.locale.LocalizationBundle;
 import dev.tagless.craft.closedblocks.api.extension.ClosedBlocksIntegration;
 import dev.tagless.craft.closedblocks.api.extension.resource.ResourceFile;
+import dev.tagless.craft.closedblocks.api.extension.resource.ResourceItem;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,8 +13,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -80,58 +81,31 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
 
     private void scan(final Set<ResourceFile> items) throws IOException {
         Path out = this.integration.getDataFolder().toPath().resolve("i18n");
+        Path outDef = out.resolve(".lvs");
         if (!Files.exists(out)) {
             Files.createDirectories(out);
+        }
+        if (!Files.exists(outDef)) {
+            Files.createDirectories(outDef);
+        }
+
+        String os = System.getProperty("os.name").toLowerCase();
+        if (os.contains("win")) {
+            Files.setAttribute(outDef, "dos:hidden", true, LinkOption.NOFOLLOW_LINKS);
         }
 
         for (ResourceFile file : items) {
             Path filePath = out.resolve(file.getName());
+            Path originalPath = outDef.resolve(file.getName());
 
-            Properties properties = new Properties();
-            PropertyResourceBundle prb;
-            if (!Files.exists(filePath)) {
-                file.export(out);
-                prb = new PropertyResourceBundle(file.getData());
-                for (String k : prb.keySet()) {
-                    properties.put(k, prb.getObject(k));
-                }
+            PropertyResourceBundle bundle;
+            if (Files.exists(filePath) && Files.exists(originalPath)) {
+                bundle = this.updateExisting(file, originalPath, filePath);
             } else {
-                properties.load(file.getData());
-                try (InputStream in = Files.newInputStream(filePath)) {
-                    prb = new PropertyResourceBundle(in);
-                }
-            }
+                file.export(filePath, ResourceItem.WriteStrategy.REMOVE);
+                file.export(originalPath, ResourceItem.WriteStrategy.REMOVE);
 
-            if (!prb.containsKey("version") && !properties.containsKey("version")) {
-                this.integration.logger().warn("Missing version property in i18n for integration {} ({})",
-                        this.integration.getName(),
-                        filePath.getFileName());
-            } else {
-                String exported = null;
-                String internal = properties.getProperty("version");
-                try {
-                    exported = prb.getString("version");
-                } catch (MissingResourceException ignored) {}
-
-                if (!internal.equals(exported)) {
-                    this.integration.logger().info("Updating localization {} of {} from {} to {}",
-                            filePath.getFileName(),
-                            this.integration.getName(),
-                            exported == null ? "0" : exported,
-                            internal);
-
-                    for (String key : prb.keySet()) {
-                        if (key.equals("version")) {
-                            continue;
-                        }
-
-                        properties.setProperty(key, prb.getString(key));
-                    }
-
-                    try (OutputStream o = Files.newOutputStream(filePath, StandardOpenOption.CREATE)) {
-                        properties.store(o, "");
-                    }
-                }
+                bundle = this.createBundle(filePath);
             }
 
             String name = file.getName().substring(8).replaceAll("\\..*$", "");
@@ -144,9 +118,9 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
 
                 this.integration.logger().info("Loaded localization for {} from {}",
                         outLocale, this.integration.getName());
-                bundleMap.put(outLocale, new IntegrationLocalization(this.integration, outLocale, prb));
+                bundleMap.put(outLocale, new IntegrationLocalization(this.integration, outLocale, bundle));
             } else {
-                defaultBundle = new IntegrationLocalization(this.integration, Locale.getDefault(), prb);
+                this.defaultBundle = new IntegrationLocalization(this.integration, Locale.getDefault(), bundle);
             }
         }
 
@@ -159,6 +133,62 @@ public class IntegrationLocalizationBundle implements LocalizationBundle {
                         new PropertyResourceBundle(emptyStream));
             }
         }
+    }
+
+    private PropertyResourceBundle createBundle(final Path forFile) throws IOException {
+        try (InputStream stream = Files.newInputStream(forFile)) {
+            return new PropertyResourceBundle(stream);
+        }
+    }
+
+    private PropertyResourceBundle updateExisting(final ResourceFile file,
+                                                  final Path originalPath,
+                                                  final Path filePath) throws IOException {
+        LanguageVersionSystem strategy = new LanguageVersionSystem(file, originalPath, filePath);
+        Map<String, LanguageVersionSystem.I18nEntry> updateKeys = strategy.mergeResult();
+
+        if (updateKeys.isEmpty()) {
+            return createBundle(filePath);
+        }
+
+        int updates = updateKeys.size();
+        this.integration.logger().warn("Updating {} entries of i18n for integration {} ({})",
+                updates,
+                this.integration.getName(),
+                filePath.getFileName());
+
+        Properties exported = new Properties();
+        try (InputStream fileData = Files.newInputStream(filePath)) {
+            exported.load(fileData);
+        }
+
+        for (Map.Entry<String, LanguageVersionSystem.I18nEntry> entry : updateKeys.entrySet()) {
+            String key = entry.getKey();
+            LanguageVersionSystem.I18nEntry meta = entry.getValue();
+
+            String value = meta.key();
+            boolean modified = meta.modified();
+
+            if (value == null) {
+                exported.remove(key);
+                continue;
+            }
+
+            exported.setProperty(key, value);
+            if (modified) {
+                this.integration.logger().warn("Updating manually modified {} of i18n for integration {} ({})",
+                        key,
+                        this.integration.getName(),
+                        filePath.getFileName());
+            }
+        }
+
+        try (OutputStream o = Files.newOutputStream(filePath)) {
+            exported.store(o, "");
+        }
+        file.export(originalPath, ResourceItem.WriteStrategy.REMOVE);
+
+        return createBundle(filePath);
     }
 
     @SuppressWarnings("DataFlowIssue")
