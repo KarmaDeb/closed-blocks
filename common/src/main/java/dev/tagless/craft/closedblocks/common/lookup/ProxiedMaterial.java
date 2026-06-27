@@ -6,6 +6,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Optional;
@@ -27,6 +28,18 @@ public final class ProxiedMaterial implements MaterialProxy {
     @Override
     public @NotNull Plugin getProvider() {
         return this.plugin;
+    }
+
+    /**
+     * Get the proxy as a material. Please note this
+     * might not return the custom material, causing the proxied
+     * methods to not return the same as the proxy
+     *
+     * @return the proxy element as a material
+     */
+    @Override @ApiStatus.Experimental
+    public Material asMaterial() {
+        return this.material;
     }
 
     /**
